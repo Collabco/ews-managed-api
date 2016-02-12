@@ -89,6 +89,37 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Binds to an existing contact and loads the specified set of properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the contact.</param>
+        /// <param name="id">The Id of the contact to bind to.</param>
+        /// <param name="propertySet">The set of properties to load.</param>
+        /// <returns>A Contact instance representing the contact corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<Contact> BindAsync(
+            ExchangeService service,
+            ItemId id,
+            PropertySet propertySet)
+        {
+            return await service.BindToItemAsync<Contact>(id, propertySet);
+        }
+
+        /// <summary>
+        /// Binds to an existing contact and loads its first class properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the contact.</param>
+        /// <param name="id">The Id of the contact to bind to.</param>
+        /// <returns>A Contact instance representing the contact corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<Contact> BindAsync(ExchangeService service, ItemId id)
+        {
+            return await Contact.BindAsync(
+                service,
+                id,
+                PropertySet.FirstClassProperties);
+        }
+
+        /// <summary>
         /// Internal method to return the schema associated with this type of object.
         /// </summary>
         /// <returns>The schema associated with this type of object.</returns>

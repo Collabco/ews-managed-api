@@ -84,6 +84,37 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Binds to an existing e-mail message and loads the specified set of properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the e-mail message.</param>
+        /// <param name="id">The Id of the e-mail message to bind to.</param>
+        /// <param name="propertySet">The set of properties to load.</param>
+        /// <returns>An EmailMessage instance representing the e-mail message corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<EmailMessage> BindAsync(
+            ExchangeService service,
+            ItemId id,
+            PropertySet propertySet)
+        {
+            return await service.BindToItemAsync<EmailMessage>(id, propertySet);
+        }
+
+        /// <summary>
+        /// Binds to an existing e-mail message and loads its first class properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the e-mail message.</param>
+        /// <param name="id">The Id of the e-mail message to bind to.</param>
+        /// <returns>An EmailMessage instance representing the e-mail message corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<EmailMessage> BindAsync(ExchangeService service, ItemId id)
+        {
+            return await EmailMessage.BindAsync(
+                service,
+                id,
+                PropertySet.FirstClassProperties);
+        }
+
+        /// <summary>
         /// Internal method to return the schema associated with this type of object.
         /// </summary>
         /// <returns>The schema associated with this type of object.</returns>

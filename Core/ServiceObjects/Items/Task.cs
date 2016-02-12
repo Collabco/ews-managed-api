@@ -87,6 +87,37 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Binds to an existing task and loads the specified set of properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the task.</param>
+        /// <param name="id">The Id of the task to bind to.</param>
+        /// <param name="propertySet">The set of properties to load.</param>
+        /// <returns>A Task instance representing the task corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<Task> BindAsync(
+            ExchangeService service,
+            ItemId id,
+            PropertySet propertySet)
+        {
+            return await service.BindToItemAsync<Task>(id, propertySet);
+        }
+
+        /// <summary>
+        /// Binds to an existing task and loads its first class properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the task.</param>
+        /// <param name="id">The Id of the task to bind to.</param>
+        /// <returns>A Task instance representing the task corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<Task> BindAsync(ExchangeService service, ItemId id)
+        {
+            return await Task.BindAsync(
+                service,
+                id,
+                PropertySet.FirstClassProperties);
+        }
+
+        /// <summary>
         /// Internal method to return the schema associated with this type of object.
         /// </summary>
         /// <returns>The schema associated with this type of object.</returns>

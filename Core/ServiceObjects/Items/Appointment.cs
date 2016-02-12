@@ -103,6 +103,37 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Binds to an existing appointment and loads the specified set of properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the appointment.</param>
+        /// <param name="id">The Id of the appointment to bind to.</param>
+        /// <param name="propertySet">The set of properties to load.</param>
+        /// <returns>An Appointment instance representing the appointment corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<Appointment> BindAsync(
+            ExchangeService service,
+            ItemId id,
+            PropertySet propertySet)
+        {
+            return await service.BindToItemAsync<Appointment>(id, propertySet);
+        }
+
+        /// <summary>
+        /// Binds to an existing appointment and loads its first class properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the appointment.</param>
+        /// <param name="id">The Id of the appointment to bind to.</param>
+        /// <returns>An Appointment instance representing the appointment corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<Appointment> BindAsync(ExchangeService service, ItemId id)
+        {
+            return await Appointment.BindAsync(
+                service,
+                id,
+                PropertySet.FirstClassProperties);
+        }
+
+        /// <summary>
         /// Binds to an occurence of an existing appointment and loads its first class properties.
         /// Calling this method results in a call to EWS.
         /// </summary>
@@ -145,15 +176,57 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Binds to an occurence of an existing appointment and loads its first class properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the appointment.</param>
+        /// <param name="recurringMasterId">The Id of the recurring master that the index represents an occurrence of.</param>
+        /// <param name="occurenceIndex">The index of the occurrence.</param>
+        /// <returns>An Appointment instance representing the appointment occurence corresponding to the specified occurence index .</returns>
+        public static async System.Threading.Tasks.Task<Appointment> BindToOccurrenceAsync(
+            ExchangeService service,
+            ItemId recurringMasterId,
+            int occurenceIndex)
+        {
+            return await Appointment.BindToOccurrenceAsync(
+                service,
+                recurringMasterId,
+                occurenceIndex,
+                PropertySet.FirstClassProperties);
+        }
+
+        /// <summary>
+        /// Binds to an occurence of an existing appointment and loads the specified set of properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the appointment.</param>
+        /// <param name="recurringMasterId">The Id of the recurring master that the index represents an occurrence of.</param>
+        /// <param name="occurenceIndex">The index of the occurrence.</param>
+        /// <param name="propertySet">The set of properties to load.</param>
+        /// <returns>An Appointment instance representing the appointment occurence corresponding to the specified occurence index.</returns>
+        public static async System.Threading.Tasks.Task<Appointment> BindToOccurrenceAsync(
+            ExchangeService service,
+            ItemId recurringMasterId,
+            int occurenceIndex,
+            PropertySet propertySet)
+        {
+            AppointmentOccurrenceId occurenceId = new AppointmentOccurrenceId(recurringMasterId.UniqueId, occurenceIndex);
+            return await Appointment.BindAsync(
+                service,
+                occurenceId,
+                propertySet);
+        }
+
+        /// <summary>
         /// Binds to the master appointment of a recurring series and loads its first class properties.
         /// Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="service">The service to use to bind to the appointment.</param>
         /// <param name="occurrenceId">The Id of one of the occurrences in the series.</param>
         /// <returns>An Appointment instance representing the master appointment of the recurring series to which the specified occurrence belongs.</returns>
-        public static Appointment BindToRecurringMaster(ExchangeService service, ItemId occurrenceId)
+        public static async System.Threading.Tasks.Task<Appointment> BindToRecurringMasterAsync(ExchangeService service, ItemId occurrenceId)
         {
-            return Appointment.BindToRecurringMaster(
+            return await Appointment.BindToRecurringMasterAsync(
                 service,
                 occurrenceId,
                 PropertySet.FirstClassProperties);
@@ -167,13 +240,13 @@ namespace Microsoft.Exchange.WebServices.Data
         /// <param name="occurrenceId">The Id of one of the occurrences in the series.</param>
         /// <param name="propertySet">The set of properties to load.</param>
         /// <returns>An Appointment instance representing the master appointment of the recurring series to which the specified occurrence belongs.</returns>
-        public static Appointment BindToRecurringMaster(
+        public static async System.Threading.Tasks.Task<Appointment> BindToRecurringMasterAsync(
             ExchangeService service,
             ItemId occurrenceId,
             PropertySet propertySet)
             {
                 RecurringAppointmentMasterId recurringMasterId = new RecurringAppointmentMasterId(occurrenceId.UniqueId);
-                return Appointment.Bind(
+                return await Appointment.BindAsync(
                     service,
                     recurringMasterId,
                     propertySet);

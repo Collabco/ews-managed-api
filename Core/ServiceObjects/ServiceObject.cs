@@ -291,6 +291,12 @@ namespace Microsoft.Exchange.WebServices.Data
         internal abstract void InternalLoad(PropertySet propertySet);
 
         /// <summary>
+        /// Loads the specified set of properties on the object.
+        /// </summary>
+        /// <param name="propertySet">The properties to load.</param>
+        internal abstract System.Threading.Tasks.Task InternalLoadAsync(PropertySet propertySet);
+
+        /// <summary>
         /// Deletes the object.
         /// </summary>
         /// <param name="deleteMode">The deletion mode.</param>
@@ -311,11 +317,28 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Loads the specified set of properties. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="propertySet">The properties to load.</param>
+        public async System.Threading.Tasks.Task LoadAsync(PropertySet propertySet)
+        {
+            await this.InternalLoadAsync(propertySet);
+        }
+
+        /// <summary>
         /// Loads the first class properties. Calling this method results in a call to EWS.
         /// </summary>
         public void Load()
         {
             this.InternalLoad(PropertySet.FirstClassProperties);
+        }
+
+        /// <summary>
+        /// Loads the first class properties. Calling this method results in a call to EWS.
+        /// </summary>
+        public async System.Threading.Tasks.Task LoadAsync()
+        {
+            await this.InternalLoadAsync(PropertySet.FirstClassProperties);
         }
 
         /// <summary>

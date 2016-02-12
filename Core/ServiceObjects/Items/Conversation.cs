@@ -85,6 +85,16 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// This method is not supported in this object.
+        /// Loads the specified set of properties on the object.
+        /// </summary>
+        /// <param name="propertySet">The properties to load.</param>
+        internal override System.Threading.Tasks.Task InternalLoadAsync(PropertySet propertySet)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
         /// This is not supported in this object.
         /// Deletes the object.
         /// </summary>

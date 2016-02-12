@@ -372,6 +372,26 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Load specified properties for a folder.
+        /// </summary>
+        /// <param name="folder">The folder.</param>
+        /// <param name="propertySet">The property set.</param>
+        internal async System.Threading.Tasks.Task LoadPropertiesForFolderAsync(
+                    Folder folder,
+                    PropertySet propertySet)
+        {
+            EwsUtilities.ValidateParam(folder, "folder");
+            EwsUtilities.ValidateParam(propertySet, "propertySet");
+
+            GetFolderRequestForLoad request = new GetFolderRequestForLoad(this, ServiceErrorHandling.ThrowOnError);
+
+            request.FolderIds.Add(folder);
+            request.PropertySet = propertySet;
+
+            await request.ExecuteAsync();
+        }
+
+        /// <summary>
         /// Binds to a folder.
         /// </summary>
         /// <param name="folderId">The folder id.</param>

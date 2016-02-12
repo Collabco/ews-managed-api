@@ -178,6 +178,21 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Loads the specified set of properties on the object.
+        /// </summary>
+        /// <param name="propertySet">The properties to load.</param>
+        internal override async System.Threading.Tasks.Task InternalLoadAsync(PropertySet propertySet)
+        {
+            this.ThrowIfThisIsNew();
+            this.ThrowIfThisIsAttachment();
+
+            await this.Service.InternalLoadPropertiesForItemsAsync(
+                new Item[] { this },
+                propertySet,
+                ServiceErrorHandling.ThrowOnError);
+        }
+
+        /// <summary>
         /// Deletes the object.
         /// </summary>
         /// <param name="deleteMode">The deletion mode.</param>

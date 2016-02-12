@@ -75,6 +75,15 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Loads the specified set of properties on the object.
+        /// </summary>
+        /// <param name="propertySet">The properties to load.</param>
+        internal override System.Threading.Tasks.Task InternalLoadAsync(PropertySet propertySet)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
         /// Deletes the object.
         /// </summary>
         /// <param name="deleteMode">The deletion mode.</param>

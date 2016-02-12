@@ -52,6 +52,22 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Binds to an existing calendar folder and loads the specified set of properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the calendar folder.</param>
+        /// <param name="id">The Id of the calendar folder to bind to.</param>
+        /// <param name="propertySet">The set of properties to load.</param>
+        /// <returns>A CalendarFolder instance representing the calendar folder corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<CalendarFolder> BindAsync(
+            ExchangeService service,
+            FolderId id,
+            PropertySet propertySet)
+        {
+            return await service.BindToFolderAsync<CalendarFolder>(id, propertySet);
+        }
+
+        /// <summary>
         /// Binds to an existing calendar folder and loads its first class properties.
         /// Calling this method results in a call to EWS.
         /// </summary>
@@ -61,6 +77,21 @@ namespace Microsoft.Exchange.WebServices.Data
         public static new CalendarFolder Bind(ExchangeService service, FolderId id)
         {
             return CalendarFolder.Bind(
+                service,
+                id,
+                PropertySet.FirstClassProperties);
+        }
+
+        /// <summary>
+        /// Binds to an existing calendar folder and loads its first class properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the calendar folder.</param>
+        /// <param name="id">The Id of the calendar folder to bind to.</param>
+        /// <returns>A CalendarFolder instance representing the calendar folder corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<CalendarFolder> BindAsync(ExchangeService service, FolderId id)
+        {
+            return await CalendarFolder.BindAsync(
                 service,
                 id,
                 PropertySet.FirstClassProperties);
@@ -86,6 +117,25 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Binds to an existing calendar folder and loads the specified set of properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the calendar folder.</param>
+        /// <param name="name">The name of the calendar folder to bind to.</param>
+        /// <param name="propertySet">The set of properties to load.</param>
+        /// <returns>A CalendarFolder instance representing the calendar folder with the specified name.</returns>
+        public static new async System.Threading.Tasks.Task<CalendarFolder> BindAsync(
+            ExchangeService service,
+            WellKnownFolderName name,
+            PropertySet propertySet)
+        {
+            return await CalendarFolder.BindAsync(
+                service,
+                new FolderId(name),
+                propertySet);
+        }
+
+        /// <summary>
         /// Binds to an existing calendar folder and loads its first class properties.
         /// Calling this method results in a call to EWS.
         /// </summary>
@@ -95,6 +145,21 @@ namespace Microsoft.Exchange.WebServices.Data
         public static new CalendarFolder Bind(ExchangeService service, WellKnownFolderName name)
         {
             return CalendarFolder.Bind(
+                service,
+                new FolderId(name),
+                PropertySet.FirstClassProperties);
+        }
+
+        /// <summary>
+        /// Binds to an existing calendar folder and loads its first class properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the calendar folder.</param>
+        /// <param name="name">The name of the calendar folder to bind to.</param>
+        /// <returns>A CalendarFolder instance representing the calendar folder with the specified name.</returns>
+        public static new async System.Threading.Tasks.Task<CalendarFolder> BindAsync(ExchangeService service, WellKnownFolderName name)
+        {
+            return await CalendarFolder.BindAsync(
                 service,
                 new FolderId(name),
                 PropertySet.FirstClassProperties);
@@ -120,6 +185,24 @@ namespace Microsoft.Exchange.WebServices.Data
             EwsUtilities.ValidateParam(view, "view");
 
             ServiceResponseCollection<FindItemResponse<Appointment>> responses = this.InternalFindItems<Appointment>(
+                (SearchFilter)null,
+                view,
+                null /* groupBy */);
+
+            return responses[0].Results;
+        }
+
+        /// <summary>
+        /// Obtains a list of appointments by searching the contents of this folder and performing recurrence expansion
+        /// for recurring appointments. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="view">The view controlling the range of appointments returned.</param>
+        /// <returns>An object representing the results of the search operation.</returns>
+        public async System.Threading.Tasks.Task<FindItemsResults<Appointment>> FindAppointmentsAsync(CalendarView view)
+        {
+            EwsUtilities.ValidateParam(view, "view");
+
+            ServiceResponseCollection<FindItemResponse<Appointment>> responses = await this.InternalFindItemsAsync<Appointment>(
                 (SearchFilter)null,
                 view,
                 null /* groupBy */);

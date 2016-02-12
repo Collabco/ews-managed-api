@@ -106,6 +106,67 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Binds to an existing contacts folder and loads the specified set of properties.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the contacts folder.</param>
+        /// <param name="id">The Id of the contacts folder to bind to.</param>
+        /// <param name="propertySet">The set of properties to load.</param>
+        /// <returns>A ContactsFolder instance representing the contacts folder corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<ContactsFolder> BindAsync(
+            ExchangeService service,
+            FolderId id,
+            PropertySet propertySet)
+        {
+            return await service.BindToFolderAsync<ContactsFolder>(id, propertySet);
+        }
+
+        /// <summary>
+        /// Binds to an existing contacts folder and loads its first class properties.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the contacts folder.</param>
+        /// <param name="id">The Id of the contacts folder to bind to.</param>
+        /// <returns>A ContactsFolder instance representing the contacts folder corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<ContactsFolder> BindAsync(ExchangeService service, FolderId id)
+        {
+            return await ContactsFolder.BindAsync(
+                service,
+                id,
+                PropertySet.FirstClassProperties);
+        }
+
+        /// <summary>
+        /// Binds to an existing contacts folder and loads the specified set of properties.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the contacts folder.</param>
+        /// <param name="name">The name of the contacts folder to bind to.</param>
+        /// <param name="propertySet">The set of properties to load.</param>
+        /// <returns>A ContactsFolder instance representing the contacts folder with the specified name.</returns>
+        public static new async System.Threading.Tasks.Task<ContactsFolder> BindAsync(
+            ExchangeService service,
+            WellKnownFolderName name,
+            PropertySet propertySet)
+        {
+            return await ContactsFolder.BindAsync(
+                service,
+                new FolderId(name),
+                propertySet);
+        }
+
+        /// <summary>
+        /// Binds to an existing contacts folder and loads its first class properties.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the contacts folder.</param>
+        /// <param name="name">The name of the contacts folder to bind to.</param>
+        /// <returns>A ContactsFolder instance representing the contacts folder with the specified name.</returns>
+        public static new async System.Threading.Tasks.Task<ContactsFolder> BindAsync(ExchangeService service, WellKnownFolderName name)
+        {
+            return await ContactsFolder.BindAsync(
+                service,
+                new FolderId(name),
+                PropertySet.FirstClassProperties);
+        }
+
+        /// <summary>
         /// Gets the minimum required server version.
         /// </summary>
         /// <returns>Earliest Exchange version in which this service object type is supported.</returns>

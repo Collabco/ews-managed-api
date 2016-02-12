@@ -101,6 +101,72 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Binds to an existing search folder and loads the specified set of properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the search folder.</param>
+        /// <param name="id">The Id of the search folder to bind to.</param>
+        /// <param name="propertySet">The set of properties to load.</param>
+        /// <returns>A SearchFolder instance representing the search folder corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<SearchFolder> BindAsync(
+            ExchangeService service,
+            FolderId id,
+            PropertySet propertySet)
+        {
+            return await service.BindToFolderAsync<SearchFolder>(id, propertySet);
+        }
+
+        /// <summary>
+        /// Binds to an existing search folder and loads its first class properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the search folder.</param>
+        /// <param name="id">The Id of the search folder to bind to.</param>
+        /// <returns>A SearchFolder instance representing the search folder corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<SearchFolder> BindAsync(ExchangeService service, FolderId id)
+        {
+            return await SearchFolder.BindAsync(
+                service,
+                id,
+                PropertySet.FirstClassProperties);
+        }
+
+        /// <summary>
+        /// Binds to an existing search folder and loads the specified set of properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the search folder.</param>
+        /// <param name="name">The name of the search folder to bind to.</param>
+        /// <param name="propertySet">The set of properties to load.</param>
+        /// <returns>A SearchFolder instance representing the search folder with the specified name.</returns>
+        public static new async System.Threading.Tasks.Task<SearchFolder> BindAsync(
+            ExchangeService service,
+            WellKnownFolderName name,
+            PropertySet propertySet)
+        {
+            return await SearchFolder.BindAsync(
+                service,
+                new FolderId(name),
+                propertySet);
+        }
+
+        /// <summary>
+        /// Binds to an existing search folder and loads its first class properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the search folder.</param>
+        /// <param name="name">The name of the search folder to bind to.</param>
+        /// <returns>A SearchFolder instance representing the search folder with the specified name.</returns>
+        public static new async System.Threading.Tasks.Task<SearchFolder> BindAsync(ExchangeService service, WellKnownFolderName name)
+        {
+            return await SearchFolder.BindAsync(
+                service,
+                new FolderId(name),
+                PropertySet.FirstClassProperties);
+        }
+
+
+        /// <summary>
         /// Initializes an unsaved local instance of <see cref="SearchFolder"/>. To bind to an existing search folder, use SearchFolder.Bind() instead.
         /// </summary>
         /// <param name="service">The ExchangeService object to which the search folder will be bound.</param>

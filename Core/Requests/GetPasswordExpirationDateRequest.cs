@@ -102,6 +102,27 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Ends executing this async request.
+        /// </summary>
+        /// <param name="asyncResult">The async result</param>
+        /// <returns>Service response collection.</returns>
+        internal GetPasswordExpirationDateResponse EndExecute(IAsyncResult asyncResult)
+        {
+            GetPasswordExpirationDateResponse serviceResponse = (GetPasswordExpirationDateResponse)this.EndInternalExecute(asyncResult);
+            return serviceResponse;
+        }
+
+
+        /// <summary>
+        /// Executes this request in an async-await fashion.
+        /// </summary>
+        /// <returns>Service response collection promise.</returns>
+        internal async System.Threading.Tasks.Task<GetPasswordExpirationDateResponse> ExecuteAsync()
+        {
+            return await System.Threading.Tasks.Task.Factory.FromAsync<GetPasswordExpirationDateResponse>(this.BeginExecute, this.EndExecute, this);
+        }
+
+        /// <summary>
         /// Gets or sets the room list to retrieve rooms from.
         /// </summary>
         internal string MailboxSmtpAddress

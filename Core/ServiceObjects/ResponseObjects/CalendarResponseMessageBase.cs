@@ -138,5 +138,100 @@ namespace Microsoft.Exchange.WebServices.Data
         {
             return new CalendarActionResults(this.InternalCreate(null, MessageDisposition.SendAndSaveCopy));
         }
+
+        /* ==== Async Operations ====== */
+
+            /// <summary>
+        /// Saves the response in the specified folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="destinationFolderId">The Id of the folder in which to save the response.</param>
+        /// <returns>
+        /// A CalendarActionResults object containing the various items that were created or modified as a
+        /// results of this operation.
+        /// </returns>
+        public new async System.Threading.Tasks.Task<CalendarActionResults> SaveAsync(FolderId destinationFolderId)
+        {
+            EwsUtilities.ValidateParam(destinationFolderId, "destinationFolderId");
+
+            return new CalendarActionResults(await this.InternalCreateAsync(destinationFolderId, MessageDisposition.SaveOnly));
+        }
+
+        /// <summary>
+        /// Saves the response in the specified folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="destinationFolderName">The name of the folder in which to save the response.</param>
+        /// <returns>
+        /// A CalendarActionResults object containing the various items that were created or modified as a
+        /// results of this operation.
+        /// </returns>
+        public new async System.Threading.Tasks.Task<CalendarActionResults> SaveAsync(WellKnownFolderName destinationFolderName)
+        {
+            return new CalendarActionResults(await this.InternalCreateAsync(new FolderId(destinationFolderName), MessageDisposition.SaveOnly));
+        }
+
+        /// <summary>
+        /// Saves the response in the Drafts folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <returns>
+        /// A CalendarActionResults object containing the various items that were created or modified as a
+        /// results of this operation.
+        /// </returns>
+        public new async System.Threading.Tasks.Task<CalendarActionResults> SaveAsync()
+        {
+            return new CalendarActionResults(await this.InternalCreateAsync(null, MessageDisposition.SaveOnly));
+        }
+
+        /// <summary>
+        /// Sends this response without saving a copy. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <returns>
+        /// A CalendarActionResults object containing the various items that were created or modified as a
+        /// results of this operation.
+        /// </returns>
+        public new async System.Threading.Tasks.Task<CalendarActionResults> SendAsync()
+        {
+            return new CalendarActionResults(await this.InternalCreateAsync(null, MessageDisposition.SendOnly));
+        }
+
+        /// <summary>
+        /// Sends this response ans saves a copy in the specified folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="destinationFolderId">The Id of the folder in which to save the copy of the message.</param>
+        /// <returns>
+        /// A CalendarActionResults object containing the various items that were created or modified as a
+        /// results of this operation.
+        /// </returns>
+        public new async System.Threading.Tasks.Task<CalendarActionResults> SendAndSaveCopyAsync(FolderId destinationFolderId)
+        {
+            EwsUtilities.ValidateParam(destinationFolderId, "destinationFolderId");
+
+            return new CalendarActionResults(await this.InternalCreateAsync(destinationFolderId, MessageDisposition.SendAndSaveCopy));
+        }
+
+        /// <summary>
+        /// Sends this response and saves a copy in the specified folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="destinationFolderName">The name of the folder in which to save the copy of the message.</param>
+        /// <returns>
+        /// A CalendarActionResults object containing the various items that were created or modified as a
+        /// results of this operation.
+        /// </returns>
+        public new async System.Threading.Tasks.Task<CalendarActionResults> SendAndSaveCopyAsync(WellKnownFolderName destinationFolderName)
+        {
+            return new CalendarActionResults(await this.InternalCreateAsync(new FolderId(destinationFolderName), MessageDisposition.SendAndSaveCopy));
+        }
+
+        /// <summary>
+        /// Sends this response ans saves a copy in the Sent Items folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <returns>
+        /// A CalendarActionResults object containing the various items that were created or modified as a
+        /// results of this operation.
+        /// </returns>
+        public new async System.Threading.Tasks.Task<CalendarActionResults> SendAndSaveCopyAsync()
+        {
+            return new CalendarActionResults(await this.InternalCreateAsync(null, MessageDisposition.SendAndSaveCopy));
+        }
     }
 }
+ 

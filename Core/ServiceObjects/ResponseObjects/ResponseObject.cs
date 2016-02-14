@@ -114,6 +114,22 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Create the response object.
+        /// </summary>
+        /// <param name="destinationFolderId">The destination folder id.</param>
+        /// <param name="messageDisposition">The message disposition.</param>
+        /// <returns>The list of items returned by EWS.</returns>
+        internal async System.Threading.Tasks.Task<List<Item>> InternalCreateAsync(FolderId destinationFolderId, MessageDisposition messageDisposition)
+        {
+            ((ItemId)this.PropertyBag[ResponseObjectSchema.ReferenceItemId]).Assign(this.referenceItem.Id);
+
+            return await this.Service.InternalCreateResponseObjectAsync(
+                this,
+                destinationFolderId,
+                messageDisposition);
+        }
+
+        /// <summary>
         /// Saves the response in the specified folder. Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="destinationFolderId">The Id of the folder in which to save the response.</param>

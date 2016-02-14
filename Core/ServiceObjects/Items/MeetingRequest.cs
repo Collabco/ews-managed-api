@@ -70,6 +70,22 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Binds to an existing meeting request and loads the specified set of properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the meeting request.</param>
+        /// <param name="id">The Id of the meeting request to bind to.</param>
+        /// <param name="propertySet">The set of properties to load.</param>
+        /// <returns>A MeetingRequest instance representing the meeting request corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<MeetingRequest> BindAsync(
+            ExchangeService service,
+            ItemId id,
+            PropertySet propertySet)
+        {
+            return await service.BindToItemAsync<MeetingRequest>(id, propertySet);
+        }
+
+        /// <summary>
         /// Binds to an existing meeting request and loads its first class properties.
         /// Calling this method results in a call to EWS.
         /// </summary>
@@ -79,6 +95,21 @@ namespace Microsoft.Exchange.WebServices.Data
         public static new MeetingRequest Bind(ExchangeService service, ItemId id)
         {
             return MeetingRequest.Bind(
+                service,
+                id,
+                PropertySet.FirstClassProperties);
+        }
+
+        /// <summary>
+        /// Binds to an existing meeting request and loads its first class properties.
+        /// Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="service">The service to use to bind to the meeting request.</param>
+        /// <param name="id">The Id of the meeting request to bind to.</param>
+        /// <returns>A MeetingRequest instance representing the meeting request corresponding to the specified Id.</returns>
+        public static new async System.Threading.Tasks.Task<MeetingRequest> BindAsync(ExchangeService service, ItemId id)
+        {
+            return await MeetingRequest.BindAsync(
                 service,
                 id,
                 PropertySet.FirstClassProperties);
@@ -135,6 +166,19 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Accepts the meeting. Calling this method results in a call to EWS. 
+        /// </summary>
+        /// <param name="sendResponse">Indicates whether to send a response to the organizer.</param>
+        /// <returns>
+        /// A CalendarActionResults object containing the various items that were created or modified as a
+        /// results of this operation.
+        /// </returns>
+        public async System.Threading.Tasks.Task<CalendarActionResults> AcceptAsync(bool sendResponse)
+        {
+            return await this.InternalAcceptAsync(false, sendResponse);
+        }
+
+        /// <summary>
         /// Tentatively accepts the meeting. Calling this method results in a call to EWS. 
         /// </summary>
         /// <param name="sendResponse">Indicates whether to send a response to the organizer.</param>
@@ -145,6 +189,19 @@ namespace Microsoft.Exchange.WebServices.Data
         public CalendarActionResults AcceptTentatively(bool sendResponse)
         {
             return this.InternalAccept(true, sendResponse);
+        }
+
+        /// <summary>
+        /// Tentatively accepts the meeting. Calling this method results in a call to EWS. 
+        /// </summary>
+        /// <param name="sendResponse">Indicates whether to send a response to the organizer.</param>
+        /// <returns>
+        /// A CalendarActionResults object containing the various items that were created or modified as a
+        /// results of this operation.
+        /// </returns>
+        public async System.Threading.Tasks.Task<CalendarActionResults> AcceptTentativelyAsync(bool sendResponse)
+        {
+            return await this.InternalAcceptAsync(true, sendResponse);
         }
 
         /// <summary>
@@ -171,6 +228,29 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Accepts the meeting.
+        /// </summary>
+        /// <param name="tentative">True if tentative accept.</param>
+        /// <param name="sendResponse">Indicates whether to send a response to the organizer.</param>
+        /// <returns>
+        /// A CalendarActionResults object containing the various items that were created or modified as a
+        /// results of this operation.
+        /// </returns>
+        internal async System.Threading.Tasks.Task<CalendarActionResults> InternalAcceptAsync(bool tentative, bool sendResponse)
+        {
+            AcceptMeetingInvitationMessage accept = this.CreateAcceptMessage(tentative);
+
+            if (sendResponse)
+            {
+                return await accept.SendAndSaveCopyAsync();
+            }
+            else
+            {
+                return await accept.SaveAsync();
+            }
+        }
+
+        /// <summary>
         /// Declines the meeting invitation. Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="sendResponse">Indicates whether to send a response to the organizer.</param>
@@ -189,6 +269,28 @@ namespace Microsoft.Exchange.WebServices.Data
             else
             {
                 return decline.Save();
+            }
+        }
+
+        /// <summary>
+        /// Declines the meeting invitation. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="sendResponse">Indicates whether to send a response to the organizer.</param>
+        /// <returns>
+        /// A CalendarActionResults object containing the various items that were created or modified as a
+        /// results of this operation.
+        /// </returns>
+        public async System.Threading.Tasks.Task<CalendarActionResults> DeclineAsync(bool sendResponse)
+        {
+            DeclineMeetingInvitationMessage decline = this.CreateDeclineMessage();
+
+            if (sendResponse)
+            {
+                return await decline.SendAndSaveCopyAsync();
+            }
+            else
+            {
+                return await decline.SaveAsync();
             }
         }
 

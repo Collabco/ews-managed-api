@@ -89,6 +89,29 @@ namespace Microsoft.Exchange.WebServices.Data
             return responses[0].Items;
         }
 
+        /// <summary>
+        /// Create response object.
+        /// </summary>
+        /// <param name="responseObject">The response object.</param>
+        /// <param name="parentFolderId">The parent folder id.</param>
+        /// <param name="messageDisposition">The message disposition.</param>
+        /// <returns>The list of items created or modified as a result of the "creation" of the response object.</returns>
+        internal async System.Threading.Tasks.Task<List<Item>> InternalCreateResponseObjectAsync(
+            ServiceObject responseObject,
+            FolderId parentFolderId,
+            MessageDisposition? messageDisposition)
+        {
+            CreateResponseObjectRequest request = new CreateResponseObjectRequest(this, ServiceErrorHandling.ThrowOnError);
+
+            request.ParentFolderId = parentFolderId;
+            request.Items = new ServiceObject[] { responseObject };
+            request.MessageDisposition = messageDisposition;
+
+            ServiceResponseCollection<CreateResponseObjectResponse> responses = await request.ExecuteAsync();
+
+            return responses[0].Items;
+        }
+
         #endregion
 
         #region Folder operations

@@ -111,6 +111,23 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Creates a folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="folder">The folder.</param>
+        /// <param name="parentFolderId">The parent folder id.</param>
+        internal async System.Threading.Tasks.Task CreateFolderAsync(
+            Folder folder,
+            FolderId parentFolderId)
+        {
+            CreateFolderRequest request = new CreateFolderRequest(this, ServiceErrorHandling.ThrowOnError);
+
+            request.Folders = new Folder[] { folder };
+            request.ParentFolderId = parentFolderId;
+
+            await request.ExecuteAsync();
+        }
+
+        /// <summary>
         /// Updates a folder.
         /// </summary>
         /// <param name="folder">The folder.</param>
@@ -121,6 +138,19 @@ namespace Microsoft.Exchange.WebServices.Data
             request.Folders.Add(folder);
 
             request.Execute();
+        }
+
+        /// <summary>
+        /// Updates a folder.
+        /// </summary>
+        /// <param name="folder">The folder.</param>
+        internal async System.Threading.Tasks.Task UpdateFolderAsync(Folder folder)
+        {
+            UpdateFolderRequest request = new UpdateFolderRequest(this, ServiceErrorHandling.ThrowOnError);
+
+            request.Folders.Add(folder);
+
+            await request.ExecuteAsync();
         }
 
         /// <summary>
@@ -144,6 +174,26 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Copies a folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="folderId">The folder id.</param>
+        /// <param name="destinationFolderId">The destination folder id.</param>
+        /// <returns>Copy of folder.</returns>
+        internal async System.Threading.Tasks.Task<Folder> CopyFolderAsync(
+            FolderId folderId,
+            FolderId destinationFolderId)
+        {
+            CopyFolderRequest request = new CopyFolderRequest(this, ServiceErrorHandling.ThrowOnError);
+
+            request.DestinationFolderId = destinationFolderId;
+            request.FolderIds.Add(folderId);
+
+            ServiceResponseCollection<MoveCopyFolderResponse> responses = await request.ExecuteAsync();
+
+            return responses[0].Folder;
+        }
+
+        /// <summary>
         /// Move a folder.
         /// </summary>
         /// <param name="folderId">The folder id.</param>
@@ -159,6 +209,26 @@ namespace Microsoft.Exchange.WebServices.Data
             request.FolderIds.Add(folderId);
 
             ServiceResponseCollection<MoveCopyFolderResponse> responses = request.Execute();
+
+            return responses[0].Folder;
+        }
+
+        /// <summary>
+        /// Move a folder.
+        /// </summary>
+        /// <param name="folderId">The folder id.</param>
+        /// <param name="destinationFolderId">The destination folder id.</param>
+        /// <returns>Moved folder.</returns>
+        internal async System.Threading.Tasks.Task<Folder> MoveFolderAsync(
+            FolderId folderId,
+            FolderId destinationFolderId)
+        {
+            MoveFolderRequest request = new MoveFolderRequest(this, ServiceErrorHandling.ThrowOnError);
+
+            request.DestinationFolderId = destinationFolderId;
+            request.FolderIds.Add(folderId);
+
+            ServiceResponseCollection<MoveCopyFolderResponse> responses = await request.ExecuteAsync();
 
             return responses[0].Folder;
         }
@@ -583,6 +653,25 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Deletes a folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="folderId">The folder id.</param>
+        /// <param name="deleteMode">The delete mode.</param>
+        internal async System.Threading.Tasks.Task DeleteFolderAsync(
+                FolderId folderId,
+                DeleteMode deleteMode)
+        {
+            EwsUtilities.ValidateParam(folderId, "folderId");
+
+            DeleteFolderRequest request = new DeleteFolderRequest(this, ServiceErrorHandling.ThrowOnError);
+
+            request.FolderIds.Add(folderId);
+            request.DeleteMode = deleteMode;
+
+            await request.ExecuteAsync();
+        }
+
+        /// <summary>
         /// Empties a folder. Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="folderId">The folder id.</param>
@@ -602,6 +691,28 @@ namespace Microsoft.Exchange.WebServices.Data
             request.DeleteSubFolders = deleteSubFolders;
 
             request.Execute();
+        }
+
+        /// <summary>
+        /// Empties a folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="folderId">The folder id.</param>
+        /// <param name="deleteMode">The delete mode.</param>
+        /// <param name="deleteSubFolders">if set to <c>true</c> empty folder should also delete sub folders.</param>
+        internal async System.Threading.Tasks.Task EmptyFolderAsync(
+            FolderId folderId,
+            DeleteMode deleteMode,
+            bool deleteSubFolders)
+        {
+            EwsUtilities.ValidateParam(folderId, "folderId");
+
+            EmptyFolderRequest request = new EmptyFolderRequest(this, ServiceErrorHandling.ThrowOnError);
+
+            request.FolderIds.Add(folderId);
+            request.DeleteMode = deleteMode;
+            request.DeleteSubFolders = deleteSubFolders;
+
+            await request.ExecuteAsync();
         }
 
         /// <summary>
@@ -625,6 +736,29 @@ namespace Microsoft.Exchange.WebServices.Data
             request.SuppressReadReceipts = suppressReadReceipts;
 
             request.Execute();
+        }
+
+        /// <summary>
+        /// Marks all items in folder as read/unread. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="folderId">The folder id.</param>
+        /// <param name="readFlag">If true, items marked as read, otherwise unread.</param>
+        /// <param name="suppressReadReceipts">If true, suppress read receipts for items.</param>
+        internal async System.Threading.Tasks.Task MarkAllItemsAsReadAsync(
+            FolderId folderId,
+            bool readFlag,
+            bool suppressReadReceipts)
+        {
+            EwsUtilities.ValidateParam(folderId, "folderId");
+            EwsUtilities.ValidateMethodVersion(this, ExchangeVersion.Exchange2013, "MarkAllItemsAsRead");
+
+            MarkAllItemsAsReadRequest request = new MarkAllItemsAsReadRequest(this, ServiceErrorHandling.ThrowOnError);
+
+            request.FolderIds.Add(folderId);
+            request.ReadFlag = readFlag;
+            request.SuppressReadReceipts = suppressReadReceipts;
+
+            await request.ExecuteAsync();
         }
 
         #endregion

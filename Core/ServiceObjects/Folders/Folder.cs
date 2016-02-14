@@ -270,12 +270,37 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Deletes the object.
+        /// </summary>
+        /// <param name="deleteMode">The deletion mode.</param>
+        /// <param name="sendCancellationsMode">Indicates whether meeting cancellation messages should be sent.</param>
+        /// <param name="affectedTaskOccurrences">Indicate which occurrence of a recurring task should be deleted.</param>
+        internal async System.Threading.Tasks.Task InternalDeleteAsync(
+            DeleteMode deleteMode,
+            SendCancellationsMode? sendCancellationsMode,
+            AffectedTaskOccurrence? affectedTaskOccurrences)
+        {
+            this.ThrowIfThisIsNew();
+
+            await this.Service.DeleteFolderAsync(this.Id, deleteMode);
+        }
+
+        /// <summary>
         /// Deletes the folder. Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="deleteMode">Deletion mode.</param>
         public void Delete(DeleteMode deleteMode)
         {
             this.InternalDelete(deleteMode, null, null);
+        }
+
+        /// <summary>
+        /// Deletes the folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="deleteMode">Deletion mode.</param>
+        public async System.Threading.Tasks.Task DeleteAsync(DeleteMode deleteMode)
+        {
+            await this.InternalDeleteAsync(deleteMode, null, null);
         }
 
         /// <summary>
@@ -295,6 +320,23 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Empties the folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="deleteMode">The deletion mode.</param>
+        /// <param name="deleteSubFolders">Indicates whether sub-folders should also be deleted.</param>
+        public async System.Threading.Tasks.Task EmptyAsync(
+            DeleteMode deleteMode,
+            bool deleteSubFolders)
+        {
+            this.ThrowIfThisIsNew();
+            await this.Service.EmptyFolderAsync(
+                this.Id,
+                deleteMode,
+                deleteSubFolders);
+        }
+
+
+        /// <summary>
         /// Marks all items in folder as read. Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="suppressReadReceipts">If true, suppress sending read receipts for items.</param>
@@ -311,10 +353,36 @@ namespace Microsoft.Exchange.WebServices.Data
         /// Marks all items in folder as read. Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="suppressReadReceipts">If true, suppress sending read receipts for items.</param>
+        public async System.Threading.Tasks.Task MarkAllItemsAsReadAsync(bool suppressReadReceipts)
+        {
+            this.ThrowIfThisIsNew();
+            await this.Service.MarkAllItemsAsReadAsync(
+                this.Id,
+                true,
+                suppressReadReceipts);
+        }
+
+        /// <summary>
+        /// Marks all items in folder as read. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="suppressReadReceipts">If true, suppress sending read receipts for items.</param>
         public void MarkAllItemsAsUnread(bool suppressReadReceipts)
         {
             this.ThrowIfThisIsNew();
             this.Service.MarkAllItemsAsRead(
+                this.Id,
+                false,
+                suppressReadReceipts);
+        }
+
+        /// <summary>
+        /// Marks all items in folder as read. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="suppressReadReceipts">If true, suppress sending read receipts for items.</param>
+        public async System.Threading.Tasks.Task MarkAllItemsAsUnreadAsync(bool suppressReadReceipts)
+        {
+            this.ThrowIfThisIsNew();
+            await this.Service.MarkAllItemsAsReadAsync(
                 this.Id,
                 false,
                 suppressReadReceipts);
@@ -339,10 +407,35 @@ namespace Microsoft.Exchange.WebServices.Data
         /// <summary>
         /// Saves this folder in a specific folder. Calling this method results in a call to EWS.
         /// </summary>
+        /// <param name="parentFolderId">The Id of the folder in which to save this folder.</param>
+        public async System.Threading.Tasks.Task SaveAsync(FolderId parentFolderId)
+        {
+            this.ThrowIfThisIsNotNew();
+
+            EwsUtilities.ValidateParam(parentFolderId, "parentFolderId");
+
+            if (this.IsDirty)
+            {
+                await this.Service.CreateFolderAsync(this, parentFolderId);
+            }
+        }
+
+        /// <summary>
+        /// Saves this folder in a specific folder. Calling this method results in a call to EWS.
+        /// </summary>
         /// <param name="parentFolderName">The name of the folder in which to save this folder.</param>
         public void Save(WellKnownFolderName parentFolderName)
         {
             this.Save(new FolderId(parentFolderName));
+        }
+
+        /// <summary>
+        /// Saves this folder in a specific folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="parentFolderName">The name of the folder in which to save this folder.</param>
+        public async System.Threading.Tasks.Task SaveAsync(WellKnownFolderName parentFolderName)
+        {
+            await this.SaveAsync(new FolderId(parentFolderName));
         }
 
         /// <summary>
@@ -355,6 +448,20 @@ namespace Microsoft.Exchange.WebServices.Data
                 if (this.PropertyBag.GetIsUpdateCallNecessary())
                 {
                     this.Service.UpdateFolder(this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Applies the local changes that have been made to this folder. Calling this method results in a call to EWS.
+        /// </summary>
+        public async System.Threading.Tasks.Task UpdateAsync()
+        {
+            if (this.IsDirty)
+            {
+                if (this.PropertyBag.GetIsUpdateCallNecessary())
+                {
+                    await this.Service.UpdateFolderAsync(this);
                 }
             }
         }
@@ -374,6 +481,20 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Copies this folder into a specific folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="destinationFolderId">The Id of the folder in which to copy this folder.</param>
+        /// <returns>A Folder representing the copy of this folder.</returns>
+        public async System.Threading.Tasks.Task<Folder> CopyAsync(FolderId destinationFolderId)
+        {
+            this.ThrowIfThisIsNew();
+
+            EwsUtilities.ValidateParam(destinationFolderId, "destinationFolderId");
+
+            return await this.Service.CopyFolderAsync(this.Id, destinationFolderId);
+        }
+
+        /// <summary>
         /// Copies this folder into the specified folder. Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="destinationFolderName">The name of the folder in which to copy this folder.</param>
@@ -381,6 +502,16 @@ namespace Microsoft.Exchange.WebServices.Data
         public Folder Copy(WellKnownFolderName destinationFolderName)
         {
             return this.Copy(new FolderId(destinationFolderName));
+        }
+
+        /// <summary>
+        /// Copies this folder into the specified folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="destinationFolderName">The name of the folder in which to copy this folder.</param>
+        /// <returns>A Folder representing the copy of this folder.</returns>
+        public async System.Threading.Tasks.Task<Folder> CopyAsync(WellKnownFolderName destinationFolderName)
+        {
+            return await this.CopyAsync(new FolderId(destinationFolderName));
         }
 
         /// <summary>
@@ -398,6 +529,20 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Moves this folder to a specific folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="destinationFolderId">The Id of the folder in which to move this folder.</param>
+        /// <returns>A new folder representing this folder in its new location. After Move completes, this folder does not exist anymore.</returns>
+        public async System.Threading.Tasks.Task<Folder> MoveAsync(FolderId destinationFolderId)
+        {
+            this.ThrowIfThisIsNew();
+
+            EwsUtilities.ValidateParam(destinationFolderId, "destinationFolderId");
+
+            return await this.Service.MoveFolderAsync(this.Id, destinationFolderId);
+        }
+
+        /// <summary>
         /// Moves this folder to the specified folder. Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="destinationFolderName">The name of the folder in which to move this folder.</param>
@@ -405,6 +550,16 @@ namespace Microsoft.Exchange.WebServices.Data
         public Folder Move(WellKnownFolderName destinationFolderName)
         {
             return this.Move(new FolderId(destinationFolderName));
+        }
+
+        /// <summary>
+        /// Moves this folder to the specified folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="destinationFolderName">The name of the folder in which to move this folder.</param>
+        /// <returns>A new folder representing this folder in its new location. After Move completes, this folder does not exist anymore.</returns>
+        public async System.Threading.Tasks.Task<Folder> MoveAsync(WellKnownFolderName destinationFolderName)
+        {
+            return await this.MoveAsync(new FolderId(destinationFolderName));
         }
 
         /// <summary>
@@ -699,6 +854,19 @@ namespace Microsoft.Exchange.WebServices.Data
             return this.Service.FindFolders(this.Id, view);
         }
 
+
+        /// <summary>
+        /// Obtains a list of folders by searching the sub-folders of this folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="view">The view controlling the number of folders returned.</param>
+        /// <returns>An object representing the results of the search operation.</returns>
+        public async System.Threading.Tasks.Task<FindFoldersResults> FindFoldersAsyync(FolderView view)
+        {
+            this.ThrowIfThisIsNew();
+
+            return await this.Service.FindFoldersAsync(this.Id, view);
+        }
+
         /// <summary>
         /// Obtains a list of folders by searching the sub-folders of this folder. Calling this method results in a call to EWS.
         /// </summary>
@@ -715,6 +883,21 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Obtains a list of folders by searching the sub-folders of this folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="searchFilter">The search filter. Available search filter classes
+        /// include SearchFilter.IsEqualTo, SearchFilter.ContainsSubstring and 
+        /// SearchFilter.SearchFilterCollection</param>
+        /// <param name="view">The view controlling the number of folders returned.</param>
+        /// <returns>An object representing the results of the search operation.</returns>
+        public async System.Threading.Tasks.Task<FindFoldersResults> FindFoldersAsync(SearchFilter searchFilter, FolderView view)
+        {
+            this.ThrowIfThisIsNew();
+
+            return await this.Service.FindFoldersAsync(this.Id, searchFilter, view);
+        }
+
+        /// <summary>
         /// Obtains a grouped list of items by searching the contents of this folder. Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="view">The view controlling the number of items returned.</param>
@@ -725,6 +908,22 @@ namespace Microsoft.Exchange.WebServices.Data
             EwsUtilities.ValidateParam(groupBy, "groupBy");
 
             return this.FindItems(
+                (SearchFilter)null,
+                view,
+                groupBy);
+        }
+
+        /// <summary>
+        /// Obtains a grouped list of items by searching the contents of this folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="view">The view controlling the number of items returned.</param>
+        /// <param name="groupBy">The grouping criteria.</param>
+        /// <returns>A collection of grouped items representing the contents of this folder.</returns>
+        public async System.Threading.Tasks.Task<GroupedFindItemsResults<Item>> FindItemsAsync(ItemView view, Grouping groupBy)
+        {
+            EwsUtilities.ValidateParam(groupBy, "groupBy");
+
+            return await this.FindItemsAsync(
                 (SearchFilter)null,
                 view,
                 groupBy);

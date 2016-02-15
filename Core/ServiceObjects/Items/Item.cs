@@ -212,6 +212,20 @@ namespace Microsoft.Exchange.WebServices.Data
         /// <param name="deleteMode">The deletion mode.</param>
         /// <param name="sendCancellationsMode">Indicates whether meeting cancellation messages should be sent.</param>
         /// <param name="affectedTaskOccurrences">Indicate which occurrence of a recurring task should be deleted.</param>
+        internal async System.Threading.Tasks.Task InternalDeleteAsync(
+            DeleteMode deleteMode,
+            SendCancellationsMode? sendCancellationsMode,
+            AffectedTaskOccurrence? affectedTaskOccurrences)
+        {
+            await this.InternalDeleteAsync(deleteMode, sendCancellationsMode, affectedTaskOccurrences, false);
+        }
+
+        /// <summary>
+        /// Deletes the object.
+        /// </summary>
+        /// <param name="deleteMode">The deletion mode.</param>
+        /// <param name="sendCancellationsMode">Indicates whether meeting cancellation messages should be sent.</param>
+        /// <param name="affectedTaskOccurrences">Indicate which occurrence of a recurring task should be deleted.</param>
         /// <param name="suppressReadReceipts">Whether to suppress read receipts</param>
         internal void InternalDelete(
             DeleteMode deleteMode,
@@ -235,6 +249,42 @@ namespace Microsoft.Exchange.WebServices.Data
             }
 
             this.Service.DeleteItem(
+                this.Id,
+                deleteMode,
+                sendCancellationsMode,
+                affectedTaskOccurrences,
+                suppressReadReceipts);
+        }
+
+        /// <summary>
+        /// Deletes the object.
+        /// </summary>
+        /// <param name="deleteMode">The deletion mode.</param>
+        /// <param name="sendCancellationsMode">Indicates whether meeting cancellation messages should be sent.</param>
+        /// <param name="affectedTaskOccurrences">Indicate which occurrence of a recurring task should be deleted.</param>
+        /// <param name="suppressReadReceipts">Whether to suppress read receipts</param>
+        internal async System.Threading.Tasks.Task InternalDeleteAsync(
+            DeleteMode deleteMode,
+            SendCancellationsMode? sendCancellationsMode,
+            AffectedTaskOccurrence? affectedTaskOccurrences,
+            bool suppressReadReceipts)
+        {
+            this.ThrowIfThisIsNew();
+            this.ThrowIfThisIsAttachment();
+
+            // If sendCancellationsMode is null, use the default value that's appropriate for item type.
+            if (!sendCancellationsMode.HasValue)
+            {
+                sendCancellationsMode = this.DefaultSendCancellationsMode;
+            }
+
+            // If affectedTaskOccurrences is null, use the default value that's appropriate for item type.
+            if (!affectedTaskOccurrences.HasValue)
+            {
+                affectedTaskOccurrences = this.DefaultAffectedTaskOccurrences;
+            }
+
+            await this.Service.DeleteItemAsync(
                 this.Id,
                 deleteMode,
                 sendCancellationsMode,
@@ -269,6 +319,32 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Create item.
+        /// </summary>
+        /// <param name="parentFolderId">The parent folder id.</param>
+        /// <param name="messageDisposition">The message disposition.</param>
+        /// <param name="sendInvitationsMode">The send invitations mode.</param>
+        internal async System.Threading.Tasks.Task InternalCreateAsync(
+            FolderId parentFolderId,
+            MessageDisposition? messageDisposition,
+            SendInvitationsMode? sendInvitationsMode)
+        {
+            this.ThrowIfThisIsNotNew();
+            this.ThrowIfThisIsAttachment();
+
+            if (this.IsNew || this.IsDirty)
+            {
+                await this.Service.CreateItemAsync(
+                    this,
+                    parentFolderId,
+                    messageDisposition,
+                    sendInvitationsMode.HasValue ? sendInvitationsMode : this.DefaultSendInvitationsMode);
+
+                this.Attachments.Save();
+            }
+        }
+
+        /// <summary>
         /// Update item.
         /// </summary>
         /// <param name="parentFolderId">The parent folder id.</param>
@@ -283,6 +359,23 @@ namespace Microsoft.Exchange.WebServices.Data
             SendInvitationsOrCancellationsMode? sendInvitationsOrCancellationsMode)
         {
             return this.InternalUpdate(parentFolderId, conflictResolutionMode, messageDisposition, sendInvitationsOrCancellationsMode, false);
+        }
+
+        /// <summary>
+        /// Update item.
+        /// </summary>
+        /// <param name="parentFolderId">The parent folder id.</param>
+        /// <param name="conflictResolutionMode">The conflict resolution mode.</param>
+        /// <param name="messageDisposition">The message disposition.</param>
+        /// <param name="sendInvitationsOrCancellationsMode">The send invitations or cancellations mode.</param>
+        /// <returns>Updated item.</returns>
+        internal async System.Threading.Tasks.Task<Item> InternalUpdateAsync(
+            FolderId parentFolderId,
+            ConflictResolutionMode conflictResolutionMode,
+            MessageDisposition? messageDisposition,
+            SendInvitationsOrCancellationsMode? sendInvitationsOrCancellationsMode)
+        {
+            return await this.InternalUpdateAsync(parentFolderId, conflictResolutionMode, messageDisposition, sendInvitationsOrCancellationsMode, false);
         }
 
         /// <summary>
@@ -323,6 +416,49 @@ namespace Microsoft.Exchange.WebServices.Data
             {
                 this.Attachments.Validate();
                 this.Attachments.Save();
+            }
+
+            return returnedItem;
+        }
+
+        /// <summary>
+        /// Update item.
+        /// </summary>
+        /// <param name="parentFolderId">The parent folder id.</param>
+        /// <param name="conflictResolutionMode">The conflict resolution mode.</param>
+        /// <param name="messageDisposition">The message disposition.</param>
+        /// <param name="sendInvitationsOrCancellationsMode">The send invitations or cancellations mode.</param>
+        /// <param name="suppressReadReceipts">Whether to suppress read receipts</param>
+        /// <returns>Updated item.</returns>
+        internal async System.Threading.Tasks.Task<Item> InternalUpdateAsync(
+            FolderId parentFolderId,
+            ConflictResolutionMode conflictResolutionMode,
+            MessageDisposition? messageDisposition,
+            SendInvitationsOrCancellationsMode? sendInvitationsOrCancellationsMode,
+            bool suppressReadReceipts)
+        {
+            this.ThrowIfThisIsNew();
+            this.ThrowIfThisIsAttachment();
+
+            Item returnedItem = null;
+
+            if (this.IsDirty && this.PropertyBag.GetIsUpdateCallNecessary())
+            {
+                returnedItem = await this.Service.UpdateItemAsync(
+                    this,
+                    parentFolderId,
+                    conflictResolutionMode,
+                    messageDisposition,
+                    sendInvitationsOrCancellationsMode.HasValue ? sendInvitationsOrCancellationsMode : this.DefaultSendInvitationsOrCancellationsMode,
+                    suppressReadReceipts);
+            }
+
+            // Regardless of whether item is dirty or not, if it has unprocessed
+            // attachment changes, validate them and process now.
+            if (this.HasUnprocessedAttachmentChanges())
+            {
+                this.Attachments.Validate();
+                await this.Attachments.SaveAsync();
             }
 
             return returnedItem;
@@ -375,10 +511,30 @@ namespace Microsoft.Exchange.WebServices.Data
         /// Deletes the item. Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="deleteMode">The deletion mode.</param>
+        public async System.Threading.Tasks.Task DeleteAsync(DeleteMode deleteMode)
+        {
+            await this.DeleteAsync(deleteMode, false);
+        }
+
+        /// <summary>
+        /// Deletes the item. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="deleteMode">The deletion mode.</param>
         /// <param name="suppressReadReceipts">Whether to suppress read receipts</param>
         public void Delete(DeleteMode deleteMode, bool suppressReadReceipts)
         {
             this.InternalDelete(deleteMode, null, null, suppressReadReceipts);
+        }
+
+
+        /// <summary>
+        /// Deletes the item. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="deleteMode">The deletion mode.</param>
+        /// <param name="suppressReadReceipts">Whether to suppress read receipts</param>
+        public async System.Threading.Tasks.Task DeleteAsync(DeleteMode deleteMode, bool suppressReadReceipts)
+        {
+            await this.InternalDeleteAsync(deleteMode, null, null, suppressReadReceipts);
         }
 
         /// <summary>

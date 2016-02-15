@@ -144,11 +144,33 @@ namespace Microsoft.Exchange.WebServices.Data
         /// <summary>
         /// Saves the response in the specified folder. Calling this method results in a call to EWS.
         /// </summary>
+        /// <param name="destinationFolderId">The Id of the folder in which to save the response.</param>
+        /// <returns>A TMessage that represents the response.</returns>
+        public async System.Threading.Tasks.Task<TMessage> SaveAsync(FolderId destinationFolderId)
+        {
+            EwsUtilities.ValidateParam(destinationFolderId, "destinationFolderId");
+
+            return (await this.InternalCreateAsync(destinationFolderId, MessageDisposition.SaveOnly))[0] as TMessage;
+        }
+
+        /// <summary>
+        /// Saves the response in the specified folder. Calling this method results in a call to EWS.
+        /// </summary>
         /// <param name="destinationFolderName">The name of the folder in which to save the response.</param>
         /// <returns>A TMessage that represents the response.</returns>
         public TMessage Save(WellKnownFolderName destinationFolderName)
         {
             return this.InternalCreate(new FolderId(destinationFolderName), MessageDisposition.SaveOnly)[0] as TMessage;
+        }
+
+        /// <summary>
+        /// Saves the response in the specified folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="destinationFolderName">The name of the folder in which to save the response.</param>
+        /// <returns>A TMessage that represents the response.</returns>
+        public async System.Threading.Tasks.Task<TMessage> SaveAsync(WellKnownFolderName destinationFolderName)
+        {
+            return (await this.InternalCreateAsync(new FolderId(destinationFolderName), MessageDisposition.SaveOnly))[0] as TMessage;
         }
 
         /// <summary>
@@ -161,11 +183,28 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Saves the response in the Drafts folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <returns>A TMessage that represents the response.</returns>
+        public async System.Threading.Tasks.Task<TMessage> SaveAsync()
+        {
+            return (await this.InternalCreateAsync(null, MessageDisposition.SaveOnly))[0] as TMessage;
+        }
+
+        /// <summary>
         /// Sends this response without saving a copy. Calling this method results in a call to EWS.
         /// </summary>
         public void Send()
         {
             this.InternalCreate(null, MessageDisposition.SendOnly);
+        }
+
+        /// <summary>
+        /// Sends this response without saving a copy. Calling this method results in a call to EWS.
+        /// </summary>
+        public async System.Threading.Tasks.Task SendAsync()
+        {
+            await this.InternalCreateAsync(null, MessageDisposition.SendOnly);
         }
 
         /// <summary>
@@ -182,10 +221,30 @@ namespace Microsoft.Exchange.WebServices.Data
         /// <summary>
         /// Sends this response and saves a copy in the specified folder. Calling this method results in a call to EWS.
         /// </summary>
+        /// <param name="destinationFolderId">The Id of the folder in which to save the copy of the message.</param>
+        public async System.Threading.Tasks.Task SendAndSaveCopyAsync(FolderId destinationFolderId)
+        {
+            EwsUtilities.ValidateParam(destinationFolderId, "destinationFolderId");
+
+            await this.InternalCreateAsync(destinationFolderId, MessageDisposition.SendAndSaveCopy);
+        }
+
+        /// <summary>
+        /// Sends this response and saves a copy in the specified folder. Calling this method results in a call to EWS.
+        /// </summary>
         /// <param name="destinationFolderName">The name of the folder in which to save the copy of the message.</param>
         public void SendAndSaveCopy(WellKnownFolderName destinationFolderName)
         {
             this.InternalCreate(new FolderId(destinationFolderName), MessageDisposition.SendAndSaveCopy);
+        }
+
+        /// <summary>
+        /// Sends this response and saves a copy in the specified folder. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="destinationFolderName">The name of the folder in which to save the copy of the message.</param>
+        public async System.Threading.Tasks.Task SendAndSaveCopyAsync(WellKnownFolderName destinationFolderName)
+        {
+            await this.InternalCreateAsync(new FolderId(destinationFolderName), MessageDisposition.SendAndSaveCopy);
         }
 
         /// <summary>
@@ -194,6 +253,16 @@ namespace Microsoft.Exchange.WebServices.Data
         public void SendAndSaveCopy()
         {
             this.InternalCreate(
+                null,
+                MessageDisposition.SendAndSaveCopy);
+        }
+
+        /// <summary>
+        /// Sends this response and saves a copy in the Sent Items folder. Calling this method results in a call to EWS.
+        /// </summary>
+        public async System.Threading.Tasks.Task SendAndSaveCopyAsync()
+        {
+            await this.InternalCreateAsync(
                 null,
                 MessageDisposition.SendAndSaveCopy);
         }

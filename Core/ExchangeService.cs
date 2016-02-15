@@ -823,6 +823,33 @@ namespace Microsoft.Exchange.WebServices.Data
         /// <param name="parentFolderId">The Id of the folder in which to place the newly created items. If null, items are created in their default folders.</param>
         /// <param name="messageDisposition">Indicates the disposition mode for items of type EmailMessage. Required if items contains at least one EmailMessage instance.</param>
         /// <param name="sendInvitationsMode">Indicates if and how invitations should be sent for items of type Appointment. Required if items contains at least one Appointment instance.</param>
+        /// <param name="errorHandling">What type of error handling should be performed.</param>
+        /// <returns>A ServiceResponseCollection providing creation results for each of the specified items.</returns>
+        private async System.Threading.Tasks.Task<ServiceResponseCollection<ServiceResponse>> InternalCreateItemsAsync(
+            IEnumerable<Item> items,
+            FolderId parentFolderId,
+            MessageDisposition? messageDisposition,
+            SendInvitationsMode? sendInvitationsMode,
+            ServiceErrorHandling errorHandling)
+        {
+            CreateItemRequest request = new CreateItemRequest(this, errorHandling);
+
+            request.ParentFolderId = parentFolderId;
+            request.Items = items;
+            request.MessageDisposition = messageDisposition;
+            request.SendInvitationsMode = sendInvitationsMode;
+
+            return await request.ExecuteAsync();
+        }
+
+        /// <summary>
+        /// Creates multiple items in a single EWS call. Supported item classes are EmailMessage, Appointment, Contact, PostItem, Task and Item.
+        /// CreateItems does not support items that have unsaved attachments.
+        /// </summary>
+        /// <param name="items">The items to create.</param>
+        /// <param name="parentFolderId">The Id of the folder in which to place the newly created items. If null, items are created in their default folders.</param>
+        /// <param name="messageDisposition">Indicates the disposition mode for items of type EmailMessage. Required if items contains at least one EmailMessage instance.</param>
+        /// <param name="sendInvitationsMode">Indicates if and how invitations should be sent for items of type Appointment. Required if items contains at least one Appointment instance.</param>
         /// <returns>A ServiceResponseCollection providing creation results for each of the specified items.</returns>
         public ServiceResponseCollection<ServiceResponse> CreateItems(
             IEnumerable<Item> items,
@@ -851,6 +878,41 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Creates multiple items in a single EWS call. Supported item classes are EmailMessage, Appointment, Contact, PostItem, Task and Item.
+        /// CreateItems does not support items that have unsaved attachments.
+        /// </summary>
+        /// <param name="items">The items to create.</param>
+        /// <param name="parentFolderId">The Id of the folder in which to place the newly created items. If null, items are created in their default folders.</param>
+        /// <param name="messageDisposition">Indicates the disposition mode for items of type EmailMessage. Required if items contains at least one EmailMessage instance.</param>
+        /// <param name="sendInvitationsMode">Indicates if and how invitations should be sent for items of type Appointment. Required if items contains at least one Appointment instance.</param>
+        /// <returns>A ServiceResponseCollection providing creation results for each of the specified items.</returns>
+        public async System.Threading.Tasks.Task<ServiceResponseCollection<ServiceResponse>> CreateItemsAsync(
+            IEnumerable<Item> items,
+            FolderId parentFolderId,
+            MessageDisposition? messageDisposition,
+            SendInvitationsMode? sendInvitationsMode)
+        {
+            // All items have to be new.
+            if (!items.TrueForAll((item) => item.IsNew))
+            {
+                throw new ServiceValidationException(Strings.CreateItemsDoesNotHandleExistingItems);
+            }
+
+            // Make sure that all items do *not* have unprocessed attachments.
+            if (!items.TrueForAll((item) => !item.HasUnprocessedAttachmentChanges()))
+            {
+                throw new ServiceValidationException(Strings.CreateItemsDoesNotAllowAttachments);
+            }
+
+            return await this.InternalCreateItemsAsync(
+                items,
+                parentFolderId,
+                messageDisposition,
+                sendInvitationsMode,
+                ServiceErrorHandling.ReturnErrors);
+        }
+
+        /// <summary>
         /// Creates an item. Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="item">The item to create.</param>
@@ -870,6 +932,28 @@ namespace Microsoft.Exchange.WebServices.Data
                 sendInvitationsMode,
                 ServiceErrorHandling.ThrowOnError);
         }
+
+        /// <summary>
+        /// Creates an item. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="item">The item to create.</param>
+        /// <param name="parentFolderId">The Id of the folder in which to place the newly created item. If null, the item is created in its default folders.</param>
+        /// <param name="messageDisposition">Indicates the disposition mode for items of type EmailMessage. Required if item is an EmailMessage instance.</param>
+        /// <param name="sendInvitationsMode">Indicates if and how invitations should be sent for item of type Appointment. Required if item is an Appointment instance.</param>
+        internal async System.Threading.Tasks.Task CreateItemAsync(
+            Item item,
+            FolderId parentFolderId,
+            MessageDisposition? messageDisposition,
+            SendInvitationsMode? sendInvitationsMode)
+        {
+            await this.InternalCreateItemsAsync(
+                new Item[] { item },
+                parentFolderId,
+                messageDisposition,
+                sendInvitationsMode,
+                ServiceErrorHandling.ThrowOnError);
+        }
+
 
         /// <summary>
         /// Updates multiple items in a single EWS call. UpdateItems does not support items that have unsaved attachments.
@@ -911,6 +995,38 @@ namespace Microsoft.Exchange.WebServices.Data
         /// <param name="conflictResolution">The conflict resolution mode.</param>
         /// <param name="messageDisposition">Indicates the disposition mode for items of type EmailMessage. Required if items contains at least one EmailMessage instance.</param>
         /// <param name="sendInvitationsOrCancellationsMode">Indicates if and how invitations and/or cancellations should be sent for items of type Appointment. Required if items contains at least one Appointment instance.</param>
+        /// <param name="errorHandling">What type of error handling should be performed.</param>
+        /// <param name="suppressReadReceipt">Whether to suppress read receipts</param>
+        /// <returns>A ServiceResponseCollection providing update results for each of the specified items.</returns>
+        private async System.Threading.Tasks.Task<ServiceResponseCollection<UpdateItemResponse>> InternalUpdateItemsAsync(
+            IEnumerable<Item> items,
+            FolderId savedItemsDestinationFolderId,
+            ConflictResolutionMode conflictResolution,
+            MessageDisposition? messageDisposition,
+            SendInvitationsOrCancellationsMode? sendInvitationsOrCancellationsMode,
+            ServiceErrorHandling errorHandling,
+            bool suppressReadReceipt)
+        {
+            UpdateItemRequest request = new UpdateItemRequest(this, errorHandling);
+
+            request.Items.AddRange(items);
+            request.SavedItemsDestinationFolder = savedItemsDestinationFolderId;
+            request.MessageDisposition = messageDisposition;
+            request.ConflictResolutionMode = conflictResolution;
+            request.SendInvitationsOrCancellationsMode = sendInvitationsOrCancellationsMode;
+            request.SuppressReadReceipts = suppressReadReceipt;
+
+            return await request.ExecuteAsync();
+        }
+
+        /// <summary>
+        /// Updates multiple items in a single EWS call. UpdateItems does not support items that have unsaved attachments.
+        /// </summary>
+        /// <param name="items">The items to update.</param>
+        /// <param name="savedItemsDestinationFolderId">The folder in which to save sent messages, meeting invitations or cancellations. If null, the messages, meeting invitation or cancellations are saved in the Sent Items folder.</param>
+        /// <param name="conflictResolution">The conflict resolution mode.</param>
+        /// <param name="messageDisposition">Indicates the disposition mode for items of type EmailMessage. Required if items contains at least one EmailMessage instance.</param>
+        /// <param name="sendInvitationsOrCancellationsMode">Indicates if and how invitations and/or cancellations should be sent for items of type Appointment. Required if items contains at least one Appointment instance.</param>
         /// <returns>A ServiceResponseCollection providing update results for each of the specified items.</returns>
         public ServiceResponseCollection<UpdateItemResponse> UpdateItems(
             IEnumerable<Item> items,
@@ -920,6 +1036,25 @@ namespace Microsoft.Exchange.WebServices.Data
             SendInvitationsOrCancellationsMode? sendInvitationsOrCancellationsMode)
         {
             return this.UpdateItems(items, savedItemsDestinationFolderId, conflictResolution, messageDisposition, sendInvitationsOrCancellationsMode, false);
+        }
+
+        /// <summary>
+        /// Updates multiple items in a single EWS call. UpdateItems does not support items that have unsaved attachments.
+        /// </summary>
+        /// <param name="items">The items to update.</param>
+        /// <param name="savedItemsDestinationFolderId">The folder in which to save sent messages, meeting invitations or cancellations. If null, the messages, meeting invitation or cancellations are saved in the Sent Items folder.</param>
+        /// <param name="conflictResolution">The conflict resolution mode.</param>
+        /// <param name="messageDisposition">Indicates the disposition mode for items of type EmailMessage. Required if items contains at least one EmailMessage instance.</param>
+        /// <param name="sendInvitationsOrCancellationsMode">Indicates if and how invitations and/or cancellations should be sent for items of type Appointment. Required if items contains at least one Appointment instance.</param>
+        /// <returns>A ServiceResponseCollection providing update results for each of the specified items.</returns>
+        public async System.Threading.Tasks.Task<ServiceResponseCollection<UpdateItemResponse>> UpdateItemsAsync(
+            IEnumerable<Item> items,
+            FolderId savedItemsDestinationFolderId,
+            ConflictResolutionMode conflictResolution,
+            MessageDisposition? messageDisposition,
+            SendInvitationsOrCancellationsMode? sendInvitationsOrCancellationsMode)
+        {
+            return await this.UpdateItemsAsync(items, savedItemsDestinationFolderId, conflictResolution, messageDisposition, sendInvitationsOrCancellationsMode, false);
         }
 
         /// <summary>
@@ -963,6 +1098,46 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Updates multiple items in a single EWS call. UpdateItems does not support items that have unsaved attachments.
+        /// </summary>
+        /// <param name="items">The items to update.</param>
+        /// <param name="savedItemsDestinationFolderId">The folder in which to save sent messages, meeting invitations or cancellations. If null, the messages, meeting invitation or cancellations are saved in the Sent Items folder.</param>
+        /// <param name="conflictResolution">The conflict resolution mode.</param>
+        /// <param name="messageDisposition">Indicates the disposition mode for items of type EmailMessage. Required if items contains at least one EmailMessage instance.</param>
+        /// <param name="sendInvitationsOrCancellationsMode">Indicates if and how invitations and/or cancellations should be sent for items of type Appointment. Required if items contains at least one Appointment instance.</param>
+        /// <param name="suppressReadReceipts">Whether to suppress read receipts</param>
+        /// <returns>A ServiceResponseCollection providing update results for each of the specified items.</returns>
+        public async System.Threading.Tasks.Task<ServiceResponseCollection<UpdateItemResponse>> UpdateItemsAsync(
+            IEnumerable<Item> items,
+            FolderId savedItemsDestinationFolderId,
+            ConflictResolutionMode conflictResolution,
+            MessageDisposition? messageDisposition,
+            SendInvitationsOrCancellationsMode? sendInvitationsOrCancellationsMode,
+            bool suppressReadReceipts)
+        {
+            // All items have to exist on the server (!new) and modified (dirty)
+            if (!items.TrueForAll((item) => (!item.IsNew && item.IsDirty)))
+            {
+                throw new ServiceValidationException(Strings.UpdateItemsDoesNotSupportNewOrUnchangedItems);
+            }
+
+            // Make sure that all items do *not* have unprocessed attachments.
+            if (!items.TrueForAll((item) => !item.HasUnprocessedAttachmentChanges()))
+            {
+                throw new ServiceValidationException(Strings.UpdateItemsDoesNotAllowAttachments);
+            }
+
+            return await this.InternalUpdateItemsAsync(
+                items,
+                savedItemsDestinationFolderId,
+                conflictResolution,
+                messageDisposition,
+                sendInvitationsOrCancellationsMode,
+                ServiceErrorHandling.ReturnErrors,
+                suppressReadReceipts);
+        }
+
+        /// <summary>
         /// Updates an item.
         /// </summary>
         /// <param name="item">The item to update.</param>
@@ -979,6 +1154,25 @@ namespace Microsoft.Exchange.WebServices.Data
             SendInvitationsOrCancellationsMode? sendInvitationsOrCancellationsMode)
         {
             return this.UpdateItem(item, savedItemsDestinationFolderId, conflictResolution, messageDisposition, sendInvitationsOrCancellationsMode, false);
+        }
+
+        /// <summary>
+        /// Updates an item.
+        /// </summary>
+        /// <param name="item">The item to update.</param>
+        /// <param name="savedItemsDestinationFolderId">The folder in which to save sent messages, meeting invitations or cancellations. If null, the message, meeting invitation or cancellation is saved in the Sent Items folder.</param>
+        /// <param name="conflictResolution">The conflict resolution mode.</param>
+        /// <param name="messageDisposition">Indicates the disposition mode for an item of type EmailMessage. Required if item is an EmailMessage instance.</param>
+        /// <param name="sendInvitationsOrCancellationsMode">Indicates if and how invitations and/or cancellations should be sent for ian tem of type Appointment. Required if item is an Appointment instance.</param>
+        /// <returns>Updated item.</returns>
+        internal async System.Threading.Tasks.Task<Item> UpdateItemAsync(
+            Item item,
+            FolderId savedItemsDestinationFolderId,
+            ConflictResolutionMode conflictResolution,
+            MessageDisposition? messageDisposition,
+            SendInvitationsOrCancellationsMode? sendInvitationsOrCancellationsMode)
+        {
+            return await this.UpdateItemAsync(item, savedItemsDestinationFolderId, conflictResolution, messageDisposition, sendInvitationsOrCancellationsMode, false);
         }
 
         /// <summary>
@@ -1012,6 +1206,36 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Updates an item.
+        /// </summary>
+        /// <param name="item">The item to update.</param>
+        /// <param name="savedItemsDestinationFolderId">The folder in which to save sent messages, meeting invitations or cancellations. If null, the message, meeting invitation or cancellation is saved in the Sent Items folder.</param>
+        /// <param name="conflictResolution">The conflict resolution mode.</param>
+        /// <param name="messageDisposition">Indicates the disposition mode for an item of type EmailMessage. Required if item is an EmailMessage instance.</param>
+        /// <param name="sendInvitationsOrCancellationsMode">Indicates if and how invitations and/or cancellations should be sent for ian tem of type Appointment. Required if item is an Appointment instance.</param>
+        /// <param name="suppressReadReceipts">Whether to suppress read receipts</param>
+        /// <returns>Updated item.</returns>
+        internal async System.Threading.Tasks.Task<Item> UpdateItemAsync(
+            Item item,
+            FolderId savedItemsDestinationFolderId,
+            ConflictResolutionMode conflictResolution,
+            MessageDisposition? messageDisposition,
+            SendInvitationsOrCancellationsMode? sendInvitationsOrCancellationsMode,
+            bool suppressReadReceipts)
+        {
+            ServiceResponseCollection<UpdateItemResponse> responses = await this.InternalUpdateItemsAsync(
+                new Item[] { item },
+                savedItemsDestinationFolderId,
+                conflictResolution,
+                messageDisposition,
+                sendInvitationsOrCancellationsMode,
+                ServiceErrorHandling.ThrowOnError,
+                suppressReadReceipts);
+
+            return responses[0].ReturnedItem;
+        }
+
+        /// <summary>
         /// Sends an item.
         /// </summary>
         /// <param name="item">The item.</param>
@@ -1026,6 +1250,23 @@ namespace Microsoft.Exchange.WebServices.Data
             request.SavedCopyDestinationFolderId = savedCopyDestinationFolderId;
 
             request.Execute();
+        }
+
+        /// <summary>
+        /// Sends an item.
+        /// </summary>
+        /// <param name="item">The item.</param>
+        /// <param name="savedCopyDestinationFolderId">The saved copy destination folder id.</param>
+        internal async System.Threading.Tasks.Task SendItemAsync(
+            Item item,
+            FolderId savedCopyDestinationFolderId)
+        {
+            SendItemRequest request = new SendItemRequest(this, ServiceErrorHandling.ThrowOnError);
+
+            request.Items = new Item[] { item };
+            request.SavedCopyDestinationFolderId = savedCopyDestinationFolderId;
+
+            await request.ExecuteAsync();
         }
 
         /// <summary>
@@ -1055,12 +1296,51 @@ namespace Microsoft.Exchange.WebServices.Data
         /// </summary>
         /// <param name="itemIds">The Ids of the items to copy.</param>
         /// <param name="destinationFolderId">The Id of the folder to copy the items to.</param>
+        /// <param name="returnNewItemIds">Flag indicating whether service should return new ItemIds or not.</param>
+        /// <param name="errorHandling">What type of error handling should be performed.</param>
+        /// <returns>A ServiceResponseCollection providing copy results for each of the specified item Ids.</returns>
+        private async System.Threading.Tasks.Task<ServiceResponseCollection<MoveCopyItemResponse>> InternalCopyItemsAsync(
+            IEnumerable<ItemId> itemIds,
+            FolderId destinationFolderId,
+            bool? returnNewItemIds,
+            ServiceErrorHandling errorHandling)
+        {
+            CopyItemRequest request = new CopyItemRequest(this, errorHandling);
+            request.ItemIds.AddRange(itemIds);
+            request.DestinationFolderId = destinationFolderId;
+            request.ReturnNewItemIds = returnNewItemIds;
+
+            return await request.ExecuteAsync();
+        }
+
+        /// <summary>
+        /// Copies multiple items in a single call to EWS.
+        /// </summary>
+        /// <param name="itemIds">The Ids of the items to copy.</param>
+        /// <param name="destinationFolderId">The Id of the folder to copy the items to.</param>
         /// <returns>A ServiceResponseCollection providing copy results for each of the specified item Ids.</returns>
         public ServiceResponseCollection<MoveCopyItemResponse> CopyItems(
             IEnumerable<ItemId> itemIds,
             FolderId destinationFolderId)
         {
             return this.InternalCopyItems(
+                itemIds,
+                destinationFolderId,
+                null,
+                ServiceErrorHandling.ReturnErrors);
+        }
+
+        /// <summary>
+        /// Copies multiple items in a single call to EWS.
+        /// </summary>
+        /// <param name="itemIds">The Ids of the items to copy.</param>
+        /// <param name="destinationFolderId">The Id of the folder to copy the items to.</param>
+        /// <returns>A ServiceResponseCollection providing copy results for each of the specified item Ids.</returns>
+        public async System.Threading.Tasks.Task<ServiceResponseCollection<MoveCopyItemResponse>> CopyItemsAsync(
+            IEnumerable<ItemId> itemIds,
+            FolderId destinationFolderId)
+        {
+            return await this.InternalCopyItemsAsync(
                 itemIds,
                 destinationFolderId,
                 null,
@@ -1092,6 +1372,31 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Copies multiple items in a single call to EWS.
+        /// </summary>
+        /// <param name="itemIds">The Ids of the items to copy.</param>
+        /// <param name="destinationFolderId">The Id of the folder to copy the items to.</param>
+        /// <param name="returnNewItemIds">Flag indicating whether service should return new ItemIds or not.</param>
+        /// <returns>A ServiceResponseCollection providing copy results for each of the specified item Ids.</returns>
+        public async System.Threading.Tasks.Task<ServiceResponseCollection<MoveCopyItemResponse>> CopyItemsAsync(
+            IEnumerable<ItemId> itemIds,
+            FolderId destinationFolderId,
+            bool returnNewItemIds)
+        {
+            EwsUtilities.ValidateMethodVersion(
+                this,
+                ExchangeVersion.Exchange2010_SP1,
+                "CopyItems");
+
+            return await this.InternalCopyItemsAsync(
+                itemIds,
+                destinationFolderId,
+                returnNewItemIds,
+                ServiceErrorHandling.ReturnErrors);
+        }
+
+
+        /// <summary>
         /// Copies an item. Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="itemId">The Id of the item to copy.</param>
@@ -1106,6 +1411,23 @@ namespace Microsoft.Exchange.WebServices.Data
                 destinationFolderId,
                 null,
                 ServiceErrorHandling.ThrowOnError)[0].Item;
+        }
+
+        /// <summary>
+        /// Copies an item. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="itemId">The Id of the item to copy.</param>
+        /// <param name="destinationFolderId">The Id of the folder to copy the item to.</param>
+        /// <returns>The copy of the item.</returns>
+        internal async System.Threading.Tasks.Task<Item> CopyItemAsync(
+            ItemId itemId,
+            FolderId destinationFolderId)
+        {
+            return (await this.InternalCopyItemsAsync(
+                new ItemId[] { itemId },
+                destinationFolderId,
+                null,
+                ServiceErrorHandling.ThrowOnError))[0].Item;
         }
 
         /// <summary>
@@ -1136,12 +1458,52 @@ namespace Microsoft.Exchange.WebServices.Data
         /// </summary>
         /// <param name="itemIds">The Ids of the items to move.</param>
         /// <param name="destinationFolderId">The Id of the folder to move the items to.</param>
+        /// <param name="returnNewItemIds">Flag indicating whether service should return new ItemIds or not.</param>
+        /// <param name="errorHandling">What type of error handling should be performed.</param>
+        /// <returns>A ServiceResponseCollection providing copy results for each of the specified item Ids.</returns>
+        private async System.Threading.Tasks.Task<ServiceResponseCollection<MoveCopyItemResponse>> InternalMoveItemsAsync(
+            IEnumerable<ItemId> itemIds,
+            FolderId destinationFolderId,
+            bool? returnNewItemIds,
+            ServiceErrorHandling errorHandling)
+        {
+            MoveItemRequest request = new MoveItemRequest(this, errorHandling);
+
+            request.ItemIds.AddRange(itemIds);
+            request.DestinationFolderId = destinationFolderId;
+            request.ReturnNewItemIds = returnNewItemIds;
+
+            return await request.ExecuteAsync();
+        }
+
+        /// <summary>
+        /// Moves multiple items in a single call to EWS.
+        /// </summary>
+        /// <param name="itemIds">The Ids of the items to move.</param>
+        /// <param name="destinationFolderId">The Id of the folder to move the items to.</param>
         /// <returns>A ServiceResponseCollection providing copy results for each of the specified item Ids.</returns>
         public ServiceResponseCollection<MoveCopyItemResponse> MoveItems(
             IEnumerable<ItemId> itemIds,
             FolderId destinationFolderId)
         {
             return this.InternalMoveItems(
+                itemIds,
+                destinationFolderId,
+                null,
+                ServiceErrorHandling.ReturnErrors);
+        }
+
+        /// <summary>
+        /// Moves multiple items in a single call to EWS.
+        /// </summary>
+        /// <param name="itemIds">The Ids of the items to move.</param>
+        /// <param name="destinationFolderId">The Id of the folder to move the items to.</param>
+        /// <returns>A ServiceResponseCollection providing copy results for each of the specified item Ids.</returns>
+        public async System.Threading.Tasks.Task<ServiceResponseCollection<MoveCopyItemResponse>> MoveItemsAsync(
+            IEnumerable<ItemId> itemIds,
+            FolderId destinationFolderId)
+        {
+            return await this.InternalMoveItemsAsync(
                 itemIds,
                 destinationFolderId,
                 null,
@@ -1173,6 +1535,30 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Moves multiple items in a single call to EWS.
+        /// </summary>
+        /// <param name="itemIds">The Ids of the items to move.</param>
+        /// <param name="destinationFolderId">The Id of the folder to move the items to.</param>
+        /// <param name="returnNewItemIds">Flag indicating whether service should return new ItemIds or not.</param>
+        /// <returns>A ServiceResponseCollection providing copy results for each of the specified item Ids.</returns>
+        public async System.Threading.Tasks.Task<ServiceResponseCollection<MoveCopyItemResponse>> MoveItemsAsync(
+            IEnumerable<ItemId> itemIds,
+            FolderId destinationFolderId,
+            bool returnNewItemIds)
+        {
+            EwsUtilities.ValidateMethodVersion(
+                this,
+                ExchangeVersion.Exchange2010_SP1,
+                "MoveItems");
+
+            return await this.InternalMoveItemsAsync(
+                itemIds,
+                destinationFolderId,
+                returnNewItemIds,
+                ServiceErrorHandling.ReturnErrors);
+        }
+
+        /// <summary>
         /// Move an item.
         /// </summary>
         /// <param name="itemId">The Id of the item to move.</param>
@@ -1187,6 +1573,23 @@ namespace Microsoft.Exchange.WebServices.Data
                 destinationFolderId,
                 null,
                 ServiceErrorHandling.ThrowOnError)[0].Item;
+        }
+
+        /// <summary>
+        /// Move an item.
+        /// </summary>
+        /// <param name="itemId">The Id of the item to move.</param>
+        /// <param name="destinationFolderId">The Id of the folder to move the item to.</param>
+        /// <returns>The moved item.</returns>
+        internal async System.Threading.Tasks.Task<Item> MoveItemAsync(
+            ItemId itemId,
+            FolderId destinationFolderId)
+        {
+            return (await this.InternalMoveItemsAsync(
+                new ItemId[] { itemId },
+                destinationFolderId,
+                null,
+                ServiceErrorHandling.ThrowOnError))[0].Item;
         }
 
         /// <summary>
@@ -1205,6 +1608,24 @@ namespace Microsoft.Exchange.WebServices.Data
             request.SourceFolderId = sourceFolderId;
 
             return request.Execute();
+        }
+
+        /// <summary>
+        /// Archives multiple items in a single call to EWS.
+        /// </summary>
+        /// <param name="itemIds">The Ids of the items to move.</param>
+        /// <param name="sourceFolderId">The Id of the folder in primary corresponding to which items are being archived to.</param>
+        /// <returns>A ServiceResponseCollection providing copy results for each of the specified item Ids.</returns>
+        public async System.Threading.Tasks.Task<ServiceResponseCollection<ArchiveItemResponse>> ArchiveItemsAsync(
+            IEnumerable<ItemId> itemIds,
+            FolderId sourceFolderId)
+        {
+            ArchiveItemRequest request = new ArchiveItemRequest(this, ServiceErrorHandling.ReturnErrors);
+
+            request.Ids.AddRange(itemIds);
+            request.SourceFolderId = sourceFolderId;
+
+            return await request.ExecuteAsync();
         }
 
         /// <summary>
@@ -2296,6 +2717,35 @@ namespace Microsoft.Exchange.WebServices.Data
         /// <param name="deleteMode">The deletion mode.</param>
         /// <param name="sendCancellationsMode">Indicates whether cancellation messages should be sent. Required if any of the item Ids represents an Appointment.</param>
         /// <param name="affectedTaskOccurrences">Indicates which instance of a recurring task should be deleted. Required if any of the item Ids represents a Task.</param>
+        /// <param name="errorHandling">Type of error handling to perform.</param>
+        /// <param name="suppressReadReceipts">Whether to suppress read receipts</param>
+        /// <returns>A ServiceResponseCollection providing deletion results for each of the specified item Ids.</returns>
+        private async System.Threading.Tasks.Task<ServiceResponseCollection<ServiceResponse>> InternalDeleteItemsAsync(
+            IEnumerable<ItemId> itemIds,
+            DeleteMode deleteMode,
+            SendCancellationsMode? sendCancellationsMode,
+            AffectedTaskOccurrence? affectedTaskOccurrences,
+            ServiceErrorHandling errorHandling,
+            bool suppressReadReceipts)
+        {
+            DeleteItemRequest request = new DeleteItemRequest(this, errorHandling);
+
+            request.ItemIds.AddRange(itemIds);
+            request.DeleteMode = deleteMode;
+            request.SendCancellationsMode = sendCancellationsMode;
+            request.AffectedTaskOccurrences = affectedTaskOccurrences;
+            request.SuppressReadReceipts = suppressReadReceipts;
+
+            return await request.ExecuteAsync();
+        }
+
+        /// <summary>
+        /// Deletes multiple items in a single call to EWS.
+        /// </summary>
+        /// <param name="itemIds">The Ids of the items to delete.</param>
+        /// <param name="deleteMode">The deletion mode.</param>
+        /// <param name="sendCancellationsMode">Indicates whether cancellation messages should be sent. Required if any of the item Ids represents an Appointment.</param>
+        /// <param name="affectedTaskOccurrences">Indicates which instance of a recurring task should be deleted. Required if any of the item Ids represents a Task.</param>
         /// <returns>A ServiceResponseCollection providing deletion results for each of the specified item Ids.</returns>
         public ServiceResponseCollection<ServiceResponse> DeleteItems(
             IEnumerable<ItemId> itemIds,
@@ -2304,6 +2754,23 @@ namespace Microsoft.Exchange.WebServices.Data
             AffectedTaskOccurrence? affectedTaskOccurrences)
         {
             return this.DeleteItems(itemIds, deleteMode, sendCancellationsMode, affectedTaskOccurrences, false);
+        }
+
+        /// <summary>
+        /// Deletes multiple items in a single call to EWS.
+        /// </summary>
+        /// <param name="itemIds">The Ids of the items to delete.</param>
+        /// <param name="deleteMode">The deletion mode.</param>
+        /// <param name="sendCancellationsMode">Indicates whether cancellation messages should be sent. Required if any of the item Ids represents an Appointment.</param>
+        /// <param name="affectedTaskOccurrences">Indicates which instance of a recurring task should be deleted. Required if any of the item Ids represents a Task.</param>
+        /// <returns>A ServiceResponseCollection providing deletion results for each of the specified item Ids.</returns>
+        public async System.Threading.Tasks.Task<ServiceResponseCollection<ServiceResponse>> DeleteItemsAsync(
+            IEnumerable<ItemId> itemIds,
+            DeleteMode deleteMode,
+            SendCancellationsMode? sendCancellationsMode,
+            AffectedTaskOccurrence? affectedTaskOccurrences)
+        {
+            return await this.DeleteItemsAsync(itemIds, deleteMode, sendCancellationsMode, affectedTaskOccurrences, false);
         }
 
         /// <summary>
@@ -2325,6 +2792,33 @@ namespace Microsoft.Exchange.WebServices.Data
             EwsUtilities.ValidateParamCollection(itemIds, "itemIds");
 
             return this.InternalDeleteItems(
+                itemIds,
+                deleteMode,
+                sendCancellationsMode,
+                affectedTaskOccurrences,
+                ServiceErrorHandling.ReturnErrors,
+                suppressReadReceipt);
+        }
+
+        /// <summary>
+        /// Deletes multiple items in a single call to EWS.
+        /// </summary>
+        /// <param name="itemIds">The Ids of the items to delete.</param>
+        /// <param name="deleteMode">The deletion mode.</param>
+        /// <param name="sendCancellationsMode">Indicates whether cancellation messages should be sent. Required if any of the item Ids represents an Appointment.</param>
+        /// <param name="affectedTaskOccurrences">Indicates which instance of a recurring task should be deleted. Required if any of the item Ids represents a Task.</param>
+        /// <returns>A ServiceResponseCollection providing deletion results for each of the specified item Ids.</returns>
+        /// <param name="suppressReadReceipt">Whether to suppress read receipts</param>
+        public async System.Threading.Tasks.Task<ServiceResponseCollection<ServiceResponse>> DeleteItemsAsync(
+            IEnumerable<ItemId> itemIds,
+            DeleteMode deleteMode,
+            SendCancellationsMode? sendCancellationsMode,
+            AffectedTaskOccurrence? affectedTaskOccurrences,
+            bool suppressReadReceipt)
+        {
+            EwsUtilities.ValidateParamCollection(itemIds, "itemIds");
+
+            return await this.InternalDeleteItemsAsync(
                 itemIds,
                 deleteMode,
                 sendCancellationsMode,
@@ -2356,6 +2850,22 @@ namespace Microsoft.Exchange.WebServices.Data
         /// <param name="deleteMode">The deletion mode.</param>
         /// <param name="sendCancellationsMode">Indicates whether cancellation messages should be sent. Required if the item Id represents an Appointment.</param>
         /// <param name="affectedTaskOccurrences">Indicates which instance of a recurring task should be deleted. Required if item Id represents a Task.</param>
+        internal async System.Threading.Tasks.Task DeleteItemAsync(
+            ItemId itemId,
+            DeleteMode deleteMode,
+            SendCancellationsMode? sendCancellationsMode,
+            AffectedTaskOccurrence? affectedTaskOccurrences)
+        {
+            await this.DeleteItemAsync(itemId, deleteMode, sendCancellationsMode, affectedTaskOccurrences, false);
+        }
+
+        /// <summary>
+        /// Deletes an item. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="itemId">The Id of the item to delete.</param>
+        /// <param name="deleteMode">The deletion mode.</param>
+        /// <param name="sendCancellationsMode">Indicates whether cancellation messages should be sent. Required if the item Id represents an Appointment.</param>
+        /// <param name="affectedTaskOccurrences">Indicates which instance of a recurring task should be deleted. Required if item Id represents a Task.</param>
         /// <param name="suppressReadReceipts">Whether to suppress read receipts</param>
         internal void DeleteItem(
             ItemId itemId,
@@ -2367,6 +2877,32 @@ namespace Microsoft.Exchange.WebServices.Data
             EwsUtilities.ValidateParam(itemId, "itemId");
 
             this.InternalDeleteItems(
+                new ItemId[] { itemId },
+                deleteMode,
+                sendCancellationsMode,
+                affectedTaskOccurrences,
+                ServiceErrorHandling.ThrowOnError,
+                suppressReadReceipts);
+        }
+
+        /// <summary>
+        /// Deletes an item. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="itemId">The Id of the item to delete.</param>
+        /// <param name="deleteMode">The deletion mode.</param>
+        /// <param name="sendCancellationsMode">Indicates whether cancellation messages should be sent. Required if the item Id represents an Appointment.</param>
+        /// <param name="affectedTaskOccurrences">Indicates which instance of a recurring task should be deleted. Required if item Id represents a Task.</param>
+        /// <param name="suppressReadReceipts">Whether to suppress read receipts</param>
+        internal async System.Threading.Tasks.Task DeleteItemAsync(
+            ItemId itemId,
+            DeleteMode deleteMode,
+            SendCancellationsMode? sendCancellationsMode,
+            AffectedTaskOccurrence? affectedTaskOccurrences,
+            bool suppressReadReceipts)
+        {
+            EwsUtilities.ValidateParam(itemId, "itemId");
+
+            await this.InternalDeleteItemsAsync(
                 new ItemId[] { itemId },
                 deleteMode,
                 sendCancellationsMode,
@@ -2389,6 +2925,22 @@ namespace Microsoft.Exchange.WebServices.Data
             request.IsJunk = isJunk;
             request.MoveItem = moveItem;
             return request.Execute();
+        }
+
+        /// <summary>
+        /// Mark items as junk.
+        /// </summary>
+        /// <param name="itemIds">ItemIds for the items to mark</param>
+        /// <param name="isJunk">Whether the items are junk.  If true, senders are add to blocked sender list. If false, senders are removed.</param>
+        /// <param name="moveItem">Whether to move the item.  Items are moved to junk folder if isJunk is true, inbox if isJunk is false.</param>
+        /// <returns>A ServiceResponseCollection providing itemIds for each of the moved items..</returns>
+        public async System.Threading.Tasks.Task<ServiceResponseCollection<MarkAsJunkResponse>> MarkAsJunkAsync(IEnumerable<ItemId> itemIds, bool isJunk, bool moveItem)
+        {
+            MarkAsJunkRequest request = new MarkAsJunkRequest(this, ServiceErrorHandling.ReturnErrors);
+            request.ItemIds.AddRange(itemIds);
+            request.IsJunk = isJunk;
+            request.MoveItem = moveItem;
+            return await request.ExecuteAsync();
         }
 
         #endregion
@@ -2841,6 +3393,24 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Creates attachments.
+        /// </summary>
+        /// <param name="parentItemId">The parent item id.</param>
+        /// <param name="attachments">The attachments.</param>
+        /// <returns>Service response collection.</returns>
+        internal async System.Threading.Tasks.Task<ServiceResponseCollection<CreateAttachmentResponse>> CreateAttachmentsAsync(
+            string parentItemId,
+            IEnumerable<Attachment> attachments)
+        {
+            CreateAttachmentRequest request = new CreateAttachmentRequest(this, ServiceErrorHandling.ReturnErrors);
+
+            request.ParentItemId = parentItemId;
+            request.Attachments.AddRange(attachments);
+
+            return await request.ExecuteAsync();
+        }
+
+        /// <summary>
         /// Deletes attachments.
         /// </summary>
         /// <param name="attachments">The attachments.</param>
@@ -2852,6 +3422,20 @@ namespace Microsoft.Exchange.WebServices.Data
             request.Attachments.AddRange(attachments);
 
             return request.Execute();
+        }
+
+        /// <summary>
+        /// Deletes attachments.
+        /// </summary>
+        /// <param name="attachments">The attachments.</param>
+        /// <returns>Service response collection.</returns>
+        internal async System.Threading.Tasks.Task<ServiceResponseCollection<DeleteAttachmentResponse>> DeleteAttachmentsAsync(IEnumerable<Attachment> attachments)
+        {
+            DeleteAttachmentRequest request = new DeleteAttachmentRequest(this, ServiceErrorHandling.ReturnErrors);
+
+            request.Attachments.AddRange(attachments);
+
+            return await request.ExecuteAsync();
         }
 
         #endregion

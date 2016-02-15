@@ -189,6 +189,62 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Send message.
+        /// </summary>
+        /// <param name="parentFolderId">The parent folder id.</param>
+        /// <param name="messageDisposition">The message disposition.</param>
+        private async System.Threading.Tasks.Task InternalSendAsync(FolderId parentFolderId, MessageDisposition messageDisposition)
+        {
+            this.ThrowIfThisIsAttachment();
+
+            if (this.IsNew)
+            {
+                if ((this.Attachments.Count == 0) || (messageDisposition == MessageDisposition.SaveOnly))
+                {
+                    await this.InternalCreateAsync(
+                        parentFolderId,
+                        messageDisposition,
+                        null);
+                }
+                else
+                {
+                    // If the message has attachments, save as a draft (and add attachments) before sending.
+                    await this.InternalCreateAsync(
+                        null,                           // null means use the Drafts folder in the mailbox of the authenticated user.
+                        MessageDisposition.SaveOnly,
+                        null);
+
+                    await this.Service.SendItemAsync(this, parentFolderId);
+                }
+            }
+            else
+            {
+                // Regardless of whether item is dirty or not, if it has unprocessed
+                // attachment changes, process them now.
+
+                // Validate and save attachments before sending.
+                if (this.HasUnprocessedAttachmentChanges())
+                {
+                    this.Attachments.Validate();
+                    this.Attachments.Save();
+                }
+
+                if (this.PropertyBag.GetIsUpdateCallNecessary())
+                {
+                    await this.InternalUpdateAsync(
+                        parentFolderId,
+                        ConflictResolutionMode.AutoResolve,
+                        messageDisposition,
+                        null);
+                }
+                else
+                {
+                    await this.Service.SendItemAsync(this, parentFolderId);
+                }
+            }
+        }
+
+        /// <summary>
         /// Creates a reply response to the message.
         /// </summary>
         /// <param name="replyAll">Indicates whether the reply should go to all of the original recipients of the message.</param>
@@ -228,6 +284,20 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Replies to the message. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="bodyPrefix">The prefix to prepend to the original body of the message.</param>
+        /// <param name="replyAll">Indicates whether the reply should be sent to all of the original recipients of the message.</param>
+        public async System.Threading.Tasks.Task ReplyAsync(MessageBody bodyPrefix, bool replyAll)
+        {
+            ResponseMessage responseMessage = this.CreateReply(replyAll);
+
+            responseMessage.BodyPrefix = bodyPrefix;
+
+            await responseMessage.SendAndSaveCopyAsync();
+        }
+
+        /// <summary>
         /// Forwards the message. Calling this method results in a call to EWS.
         /// </summary>
         /// <param name="bodyPrefix">The prefix to prepend to the original body of the message.</param>
@@ -235,6 +305,16 @@ namespace Microsoft.Exchange.WebServices.Data
         public void Forward(MessageBody bodyPrefix, params EmailAddress[] toRecipients)
         {
             this.Forward(bodyPrefix, (IEnumerable<EmailAddress>)toRecipients);
+        }
+
+        /// <summary>
+        /// Forwards the message. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="bodyPrefix">The prefix to prepend to the original body of the message.</param>
+        /// <param name="toRecipients">The recipients to forward the message to.</param>
+        public async System.Threading.Tasks.Task ForwardAsync(MessageBody bodyPrefix, params EmailAddress[] toRecipients)
+        {
+            await this.ForwardAsync(bodyPrefix, (IEnumerable<EmailAddress>)toRecipients);
         }
 
         /// <summary>
@@ -253,11 +333,34 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Forwards the message. Calling this method results in a call to EWS.
+        /// </summary>
+        /// <param name="bodyPrefix">The prefix to prepend to the original body of the message.</param>
+        /// <param name="toRecipients">The recipients to forward the message to.</param>
+        public async System.Threading.Tasks.Task ForwardAsync(MessageBody bodyPrefix, IEnumerable<EmailAddress> toRecipients)
+        {
+            ResponseMessage responseMessage = this.CreateForward();
+
+            responseMessage.BodyPrefix = bodyPrefix;
+            responseMessage.ToRecipients.AddRange(toRecipients);
+
+            await responseMessage.SendAndSaveCopyAsync();
+        }
+
+        /// <summary>
         /// Sends this e-mail message. Calling this method results in at least one call to EWS.
         /// </summary>
         public void Send()
         {
             this.InternalSend(null, MessageDisposition.SendOnly);
+        }
+
+        /// <summary>
+        /// Sends this e-mail message. Calling this method results in at least one call to EWS.
+        /// </summary>
+        public async System.Threading.Tasks.Task SendAsync()
+        {
+            await this.InternalSendAsync(null, MessageDisposition.SendOnly);
         }
 
         /// <summary>

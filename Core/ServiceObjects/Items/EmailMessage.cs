@@ -376,6 +376,20 @@ namespace Microsoft.Exchange.WebServices.Data
             this.InternalSend(destinationFolderId, MessageDisposition.SendAndSaveCopy);
         }
 
+
+        /// <summary>
+        /// Sends this e-mail message and saves a copy of it in the specified folder. SendAndSaveCopy does not work if the
+        /// message has unsaved attachments. In that case, the message must first be saved and then sent. Calling this method
+        /// results in a call to EWS.
+        /// </summary>
+        /// <param name="destinationFolderId">The Id of the folder in which to save the copy.</param>
+        public async System.Threading.Tasks.Task SendAndSaveCopyAsync(FolderId destinationFolderId)
+        {
+            EwsUtilities.ValidateParam(destinationFolderId, "destinationFolderId");
+
+            await this.InternalSendAsync(destinationFolderId, MessageDisposition.SendAndSaveCopy);
+        }
+
         /// <summary>
         /// Sends this e-mail message and saves a copy of it in the specified folder. SendAndSaveCopy does not work if the
         /// message has unsaved attachments. In that case, the message must first be saved and then sent. Calling this method
@@ -388,6 +402,17 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Sends this e-mail message and saves a copy of it in the specified folder. SendAndSaveCopy does not work if the
+        /// message has unsaved attachments. In that case, the message must first be saved and then sent. Calling this method
+        /// results in a call to EWS.
+        /// </summary>
+        /// <param name="destinationFolderName">The name of the folder in which to save the copy.</param>
+        public async System.Threading.Tasks.Task SendAndSaveCopyAsync(WellKnownFolderName destinationFolderName)
+        {
+            await this.InternalSendAsync(new FolderId(destinationFolderName), MessageDisposition.SendAndSaveCopy);
+        }
+
+        /// <summary>
         /// Sends this e-mail message and saves a copy of it in the Sent Items folder. SendAndSaveCopy does not work if the
         /// message has unsaved attachments. In that case, the message must first be saved and then sent. Calling this method
         /// results in a call to EWS.
@@ -395,6 +420,16 @@ namespace Microsoft.Exchange.WebServices.Data
         public void SendAndSaveCopy()
         {
             this.InternalSend(new FolderId(WellKnownFolderName.SentItems), MessageDisposition.SendAndSaveCopy);
+        }
+
+        /// <summary>
+        /// Sends this e-mail message and saves a copy of it in the Sent Items folder. SendAndSaveCopy does not work if the
+        /// message has unsaved attachments. In that case, the message must first be saved and then sent. Calling this method
+        /// results in a call to EWS.
+        /// </summary>
+        public async System.Threading.Tasks.Task SendAndSaveCopyAsync()
+        {
+            await this.InternalSendAsync(new FolderId(WellKnownFolderName.SentItems), MessageDisposition.SendAndSaveCopy);
         }
 
         /// <summary>

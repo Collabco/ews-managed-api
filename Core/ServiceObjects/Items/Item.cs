@@ -556,10 +556,38 @@ namespace Microsoft.Exchange.WebServices.Data
         /// Saves this item in a specific folder. Calling this method results in at least one call to EWS.
         /// Mutliple calls to EWS might be made if attachments have been added.
         /// </summary>
+        /// <param name="parentFolderId">The Id of the folder in which to save this item.</param>
+        public async System.Threading.Tasks.Task SaveAsync(FolderId parentFolderId)
+        {
+            EwsUtilities.ValidateParam(parentFolderId, "parentFolderId");
+
+            await this.InternalCreateAsync(
+                parentFolderId,
+                MessageDisposition.SaveOnly,
+                null);
+        }
+
+        /// <summary>
+        /// Saves this item in a specific folder. Calling this method results in at least one call to EWS.
+        /// Mutliple calls to EWS might be made if attachments have been added.
+        /// </summary>
         /// <param name="parentFolderName">The name of the folder in which to save this item.</param>
         public void Save(WellKnownFolderName parentFolderName)
         {
             this.InternalCreate(
+                new FolderId(parentFolderName),
+                MessageDisposition.SaveOnly,
+                null);
+        }
+
+        /// <summary>
+        /// Saves this item in a specific folder. Calling this method results in at least one call to EWS.
+        /// Mutliple calls to EWS might be made if attachments have been added.
+        /// </summary>
+        /// <param name="parentFolderName">The name of the folder in which to save this item.</param>
+        public async System.Threading.Tasks.Task SaveAsync(WellKnownFolderName parentFolderName)
+        {
+            await this.InternalCreateAsync(
                 new FolderId(parentFolderName),
                 MessageDisposition.SaveOnly,
                 null);
@@ -572,6 +600,18 @@ namespace Microsoft.Exchange.WebServices.Data
         public void Save()
         {
             this.InternalCreate(
+                null,
+                MessageDisposition.SaveOnly,
+                null);
+        }
+
+        /// <summary>
+        /// Saves this item in the default folder based on the item's type (for example, an e-mail message is saved to the Drafts folder).
+        /// Calling this method results in at least one call to EWS. Mutliple calls to EWS might be made if attachments have been added.
+        /// </summary>
+        public async System.Threading.Tasks.Task SaveAsync()
+        {
+            await this.InternalCreateAsync(
                 null,
                 MessageDisposition.SaveOnly,
                 null);
@@ -592,10 +632,36 @@ namespace Microsoft.Exchange.WebServices.Data
         /// Mutliple calls to EWS might be made if attachments have been added or removed.
         /// </summary>
         /// <param name="conflictResolutionMode">The conflict resolution mode.</param>
+        public async System.Threading.Tasks.Task UpdateAsync(ConflictResolutionMode conflictResolutionMode)
+        {
+            await this.UpdateAsync(conflictResolutionMode, false);
+        }
+
+        /// <summary>
+        /// Applies the local changes that have been made to this item. Calling this method results in at least one call to EWS.
+        /// Mutliple calls to EWS might be made if attachments have been added or removed.
+        /// </summary>
+        /// <param name="conflictResolutionMode">The conflict resolution mode.</param>
         /// <param name="suppressReadReceipts">Whether to suppress read receipts</param>
         public void Update(ConflictResolutionMode conflictResolutionMode, bool suppressReadReceipts)
         {
             this.InternalUpdate(
+                null /* parentFolder */,
+                conflictResolutionMode,
+                MessageDisposition.SaveOnly,
+                null,
+                suppressReadReceipts);
+        }
+
+        /// <summary>
+        /// Applies the local changes that have been made to this item. Calling this method results in at least one call to EWS.
+        /// Mutliple calls to EWS might be made if attachments have been added or removed.
+        /// </summary>
+        /// <param name="conflictResolutionMode">The conflict resolution mode.</param>
+        /// <param name="suppressReadReceipts">Whether to suppress read receipts</param>
+        public async System.Threading.Tasks.Task UpdateAsync(ConflictResolutionMode conflictResolutionMode, bool suppressReadReceipts)
+        {
+            await this.InternalUpdateAsync(
                 null /* parentFolder */,
                 conflictResolutionMode,
                 MessageDisposition.SaveOnly,
@@ -629,11 +695,44 @@ namespace Microsoft.Exchange.WebServices.Data
         /// public folder.
         /// </para>
         /// </summary>
+        /// <param name="destinationFolderId">The Id of the folder in which to create a copy of this item.</param>
+        /// <returns>The copy of this item.</returns>
+        public async System.Threading.Tasks.Task<Item> CopyAsync(FolderId destinationFolderId)
+        {
+            this.ThrowIfThisIsNew();
+            this.ThrowIfThisIsAttachment();
+
+            EwsUtilities.ValidateParam(destinationFolderId, "destinationFolderId");
+
+            return await this.Service.CopyItemAsync(this.Id, destinationFolderId);
+        }
+
+        /// <summary>
+        /// Creates a copy of this item in the specified folder. Calling this method results in a call to EWS.
+        /// <para>
+        /// Copy returns null if the copy operation is across two mailboxes or between a mailbox and a
+        /// public folder.
+        /// </para>
+        /// </summary>
         /// <param name="destinationFolderName">The name of the folder in which to create a copy of this item.</param>
         /// <returns>The copy of this item.</returns>
         public Item Copy(WellKnownFolderName destinationFolderName)
         {
             return this.Copy(new FolderId(destinationFolderName));
+        }
+
+        /// <summary>
+        /// Creates a copy of this item in the specified folder. Calling this method results in a call to EWS.
+        /// <para>
+        /// Copy returns null if the copy operation is across two mailboxes or between a mailbox and a
+        /// public folder.
+        /// </para>
+        /// </summary>
+        /// <param name="destinationFolderName">The name of the folder in which to create a copy of this item.</param>
+        /// <returns>The copy of this item.</returns>
+        public async System.Threading.Tasks.Task<Item> CopyAsync(WellKnownFolderName destinationFolderName)
+        {
+            return await this.CopyAsync(new FolderId(destinationFolderName));
         }
 
         /// <summary>
@@ -662,11 +761,44 @@ namespace Microsoft.Exchange.WebServices.Data
         /// public folder.
         /// </para>
         /// </summary>
+        /// <param name="destinationFolderId">The Id of the folder to which to move this item.</param>
+        /// <returns>The moved copy of this item.</returns>
+        public async System.Threading.Tasks.Task<Item> MoveAsync(FolderId destinationFolderId)
+        {
+            this.ThrowIfThisIsNew();
+            this.ThrowIfThisIsAttachment();
+
+            EwsUtilities.ValidateParam(destinationFolderId, "destinationFolderId");
+
+            return await this.Service.MoveItemAsync(this.Id, destinationFolderId);
+        }
+
+        /// <summary>
+        /// Moves this item to a the specified folder. Calling this method results in a call to EWS.
+        /// <para>
+        /// Move returns null if the move operation is across two mailboxes or between a mailbox and a
+        /// public folder.
+        /// </para>
+        /// </summary>
         /// <param name="destinationFolderName">The name of the folder to which to move this item.</param>
         /// <returns>The moved copy of this item.</returns>
         public Item Move(WellKnownFolderName destinationFolderName)
         {
             return this.Move(new FolderId(destinationFolderName));
+        }
+
+        /// <summary>
+        /// Moves this item to a the specified folder. Calling this method results in a call to EWS.
+        /// <para>
+        /// Move returns null if the move operation is across two mailboxes or between a mailbox and a
+        /// public folder.
+        /// </para>
+        /// </summary>
+        /// <param name="destinationFolderName">The name of the folder to which to move this item.</param>
+        /// <returns>The moved copy of this item.</returns>
+        public async System.Threading.Tasks.Task<Item> MoveAsync(WellKnownFolderName destinationFolderName)
+        {
+            return await this.MoveAsync(new FolderId(destinationFolderName));
         }
 
         /// <summary>

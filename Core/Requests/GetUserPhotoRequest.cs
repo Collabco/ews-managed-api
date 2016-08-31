@@ -187,7 +187,7 @@ namespace Microsoft.Exchange.WebServices.Data
             return GetUserPhotoRequest.GetResultOrDefault(this.InternalExecute);
         }
 
-                /// <summary>
+        /// <summary>
         /// Ends executing this async request.
         /// </summary>
         /// <param name="asyncResult">The async result</param>
@@ -195,6 +195,15 @@ namespace Microsoft.Exchange.WebServices.Data
         internal GetUserPhotoResponse EndExecute(IAsyncResult asyncResult)
         {
             return GetUserPhotoRequest.GetResultOrDefault(() => this.EndInternalExecute(asyncResult));
+        }
+
+        /// <summary>
+        /// Executes this request in an async-await fashion.
+        /// </summary>
+        /// <returns>Service response.</returns>
+        internal async System.Threading.Tasks.Task<GetUserPhotoResponse> ExecuteAsync()
+        {
+            return await System.Threading.Tasks.Task.Factory.FromAsync<GetUserPhotoResponse>(this.BeginExecute, this.EndExecute, this);
         }
 
         private static GetUserPhotoResponse GetResultOrDefault(Func<object> serviceResponseFactory)

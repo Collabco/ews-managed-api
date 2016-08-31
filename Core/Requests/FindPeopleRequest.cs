@@ -229,5 +229,26 @@ namespace Microsoft.Exchange.WebServices.Data
             serviceResponse.ThrowIfNecessary();
             return serviceResponse;
         }
+
+        /// <summary>
+        /// Executes this request in an async-await fashion.
+        /// </summary>
+        /// <returns>Service response.</returns>
+        internal async System.Threading.Tasks.Task<FindPeopleResponse> ExecuteAsync()
+        {
+            return await System.Threading.Tasks.Task.Factory.FromAsync<FindPeopleResponse>(this.BeginExecute, this.EndExecute, this);
+        }
+
+        /// <summary>
+        /// Ends executing this async request.
+        /// </summary>
+        /// <param name="asyncResult">The async result</param>
+        /// <returns>Service response collection.</returns>
+        internal FindPeopleResponse EndExecute(IAsyncResult asyncResult)
+        {
+            FindPeopleResponse serviceResponse = (FindPeopleResponse)this.EndInternalExecute(asyncResult);
+            serviceResponse.ThrowIfNecessary();
+            return serviceResponse;
+        }   
     }
 }

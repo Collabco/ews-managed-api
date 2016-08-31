@@ -2970,9 +2970,35 @@ namespace Microsoft.Exchange.WebServices.Data
             request.FolderId = folderId;
             request.SearchFilter = searchFilter;
             request.View = view;
-            request.QueryString = queryString;
-
+            request.QueryString = queryString;            
             return request.Execute().Personas;
+        }
+
+        /// <summary>
+        /// This method is for search scenarios. Retrieves a set of personas satisfying the specified search conditions.
+        /// </summary>
+        /// <param name="folderId">Id of the folder being searched</param>
+        /// <param name="searchFilter">The search filter. Available search filter classes
+        /// include SearchFilter.IsEqualTo, SearchFilter.ContainsSubstring and 
+        /// SearchFilter.SearchFilterCollection</param>
+        /// <param name="view">The view which defines the number of persona being returned</param>
+        /// <param name="queryString">The query string for which the search is being performed</param>
+        /// <returns>A collection of personas matching the search conditions</returns>
+        public async System.Threading.Tasks.Task<ICollection<Persona>> FindPeopleAsync(FolderId folderId, SearchFilter searchFilter, ViewBase view, string queryString)
+        {
+            EwsUtilities.ValidateParamAllowNull(folderId, "folderId");
+            EwsUtilities.ValidateParamAllowNull(searchFilter, "searchFilter");
+            EwsUtilities.ValidateParam(view, "view");
+            EwsUtilities.ValidateParam(queryString, "queryString");
+            EwsUtilities.ValidateMethodVersion(this, ExchangeVersion.Exchange2013_SP1, "FindPeople");
+
+            FindPeopleRequest request = new FindPeopleRequest(this);
+
+            request.FolderId = folderId;
+            request.SearchFilter = searchFilter;
+            request.View = view;
+            request.QueryString = queryString;
+            return (await request.ExecuteAsync()).Personas;
         }
 
         /// <summary>
@@ -2988,6 +3014,21 @@ namespace Microsoft.Exchange.WebServices.Data
         public ICollection<Persona> FindPeople(WellKnownFolderName folderName, SearchFilter searchFilter, ViewBase view, string queryString)
         {
             return this.FindPeople(new FolderId(folderName), searchFilter, view, queryString);
+        }
+
+        /// <summary>
+        /// This method is for search scenarios. Retrieves a set of personas satisfying the specified search conditions.
+        /// </summary>
+        /// <param name="folderName">Name of the folder being searched</param>
+        /// <param name="searchFilter">The search filter. Available search filter classes
+        /// include SearchFilter.IsEqualTo, SearchFilter.ContainsSubstring and 
+        /// SearchFilter.SearchFilterCollection</param>
+        /// <param name="view">The view which defines the number of persona being returned</param>
+        /// <param name="queryString">The query string for which the search is being performed</param>
+        /// <returns>A collection of personas matching the search conditions</returns>
+        public System.Threading.Tasks.Task<ICollection<Persona>> FindPeopleAsync(WellKnownFolderName folderName, SearchFilter searchFilter, ViewBase view, string queryString)
+        {
+            return this.FindPeopleAsync(new FolderId(folderName), searchFilter, view, queryString);
         }
 
         /// <summary>
@@ -3016,6 +3057,30 @@ namespace Microsoft.Exchange.WebServices.Data
 
         /// <summary>
         /// This method is for browse scenarios. Retrieves a set of personas satisfying the specified browse conditions.
+        /// Browse scenariosdon't require query string.
+        /// </summary>
+        /// <param name="folderId">Id of the folder being browsed</param>
+        /// <param name="searchFilter">Search filter</param>
+        /// <param name="view">The view which defines paging and the number of persona being returned</param>
+        /// <returns>A result object containing resultset for browsing</returns>
+        public async System.Threading.Tasks.Task<FindPeopleResults> FindPeopleAsync(FolderId folderId, SearchFilter searchFilter, ViewBase view)
+        {
+            EwsUtilities.ValidateParamAllowNull(folderId, "folderId");
+            EwsUtilities.ValidateParamAllowNull(searchFilter, "searchFilter");
+            EwsUtilities.ValidateParamAllowNull(view, "view");
+            EwsUtilities.ValidateMethodVersion(this, ExchangeVersion.Exchange2013_SP1, "FindPeople");
+
+            FindPeopleRequest request = new FindPeopleRequest(this);
+
+            request.FolderId = folderId;
+            request.SearchFilter = searchFilter;
+            request.View = view;
+
+            return (await request.ExecuteAsync()).Results;
+        }
+
+        /// <summary>
+        /// This method is for browse scenarios. Retrieves a set of personas satisfying the specified browse conditions.
         /// Browse scenarios don't require query string.
         /// </summary>
         /// <param name="folderName">Name of the folder being browsed</param>
@@ -3025,6 +3090,19 @@ namespace Microsoft.Exchange.WebServices.Data
         public FindPeopleResults FindPeople(WellKnownFolderName folderName, SearchFilter searchFilter, ViewBase view)
         {
             return this.FindPeople(new FolderId(folderName), searchFilter, view);
+        }
+
+        /// <summary>
+        /// This method is for browse scenarios. Retrieves a set of personas satisfying the specified browse conditions.
+        /// Browse scenarios don't require query string.
+        /// </summary>
+        /// <param name="folderName">Name of the folder being browsed</param>
+        /// <param name="searchFilter">Search filter</param>
+        /// <param name="view">The view which defines paging and the number of personas being returned</param>
+        /// <returns>A result object containing resultset for browsing</returns>
+        public System.Threading.Tasks.Task<FindPeopleResults> FindPeopleAsync(WellKnownFolderName folderName, SearchFilter searchFilter, ViewBase view)
+        {
+            return this.FindPeopleAsync(new FolderId(folderName), searchFilter, view);
         }
 
         /// <summary>
@@ -3041,11 +3119,32 @@ namespace Microsoft.Exchange.WebServices.Data
         /// Retrieves all people who are relevant to the user
         /// </summary>
         /// <param name="view">The view which defines the number of personas being returned</param>
+        /// <returns>A collection of personas matching the query string</returns>
+        public System.Threading.Tasks.Task<IPeopleQueryResults> BrowsePeopleAsync(ViewBase view)
+        {
+            return this.BrowsePeopleAsync(view, null);
+        }
+
+        /// <summary>
+        /// Retrieves all people who are relevant to the user
+        /// </summary>
+        /// <param name="view">The view which defines the number of personas being returned</param>
         /// <param name="context">The context for this query. See PeopleQueryContextKeys for keys</param>
         /// <returns>A collection of personas matching the query string</returns>
         public IPeopleQueryResults BrowsePeople(ViewBase view, Dictionary<string, string> context)
         {
             return this.PerformPeopleQuery(view, string.Empty, context, null);
+        }
+
+        /// <summary>
+        /// Retrieves all people who are relevant to the user
+        /// </summary>
+        /// <param name="view">The view which defines the number of personas being returned</param>
+        /// <param name="context">The context for this query. See PeopleQueryContextKeys for keys</param>
+        /// <returns>A collection of personas matching the query string</returns>
+        public System.Threading.Tasks.Task<IPeopleQueryResults> BrowsePeopleAsync(ViewBase view, Dictionary<string, string> context)
+        {
+            return this.PerformPeopleQueryAsync(view, string.Empty, context, null);
         }
 
         /// <summary>
@@ -3061,6 +3160,18 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Searches for people who are relevant to the user, automatically determining
+        /// the best sources to use.
+        /// </summary>
+        /// <param name="view">The view which defines the number of personas being returned</param>
+        /// <param name="queryString">The query string for which the search is being performed</param>
+        /// <returns>A collection of personas matching the query string</returns>
+        public System.Threading.Tasks.Task<IPeopleQueryResults> SearchPeopleAsync(ViewBase view, string queryString)
+        {
+            return this.SearchPeopleAsync(view, queryString, null, null);
+        }
+
+        /// <summary>
         /// Searches for people who are relevant to the user
         /// </summary>
         /// <param name="view">The view which defines the number of personas being returned</param>
@@ -3073,6 +3184,21 @@ namespace Microsoft.Exchange.WebServices.Data
             EwsUtilities.ValidateParam(queryString, "queryString");
 
             return this.PerformPeopleQuery(view, queryString, context, queryMode);
+        }
+
+        /// <summary>
+        /// Searches for people who are relevant to the user
+        /// </summary>
+        /// <param name="view">The view which defines the number of personas being returned</param>
+        /// <param name="queryString">The query string for which the search is being performed</param>
+        /// <param name="context">The context for this query. See PeopleQueryContextKeys for keys</param>
+        /// <param name="queryMode">The scope of the query.</param>
+        /// <returns>A collection of personas matching the query string</returns>
+        public System.Threading.Tasks.Task<IPeopleQueryResults> SearchPeopleAsync(ViewBase view, string queryString, Dictionary<string, string> context, PeopleQueryMode queryMode)
+        {
+            EwsUtilities.ValidateParam(queryString, "queryString");
+
+            return this.PerformPeopleQueryAsync(view, queryString, context, queryMode);
         }
 
         /// <summary>
@@ -3115,6 +3241,45 @@ namespace Microsoft.Exchange.WebServices.Data
         }
 
         /// <summary>
+        /// Performs a People Query FindPeople call
+        /// </summary>
+        /// <param name="view">The view which defines the number of personas being returned</param>
+        /// <param name="queryString">The query string for which the search is being performed</param>
+        /// <param name="context">The context for this query</param>
+        /// <param name="queryMode">The scope of the query.</param>
+        /// <returns></returns>
+        private async System.Threading.Tasks.Task<IPeopleQueryResults> PerformPeopleQueryAsync(ViewBase view, string queryString, Dictionary<string, string> context, PeopleQueryMode queryMode)
+        {
+            EwsUtilities.ValidateParam(view, "view");
+            EwsUtilities.ValidateMethodVersion(this, ExchangeVersion.Exchange2015, "FindPeople");
+
+            if (context == null)
+            {
+                context = new Dictionary<string, string>();
+            }
+
+            if (queryMode == null)
+            {
+                queryMode = PeopleQueryMode.Auto;
+            }
+
+            FindPeopleRequest request = new FindPeopleRequest(this);
+            request.View = view;
+            request.QueryString = queryString;
+            request.SearchPeopleSuggestionIndex = true;
+            request.Context = context;
+            request.QueryMode = queryMode;
+
+            FindPeopleResponse response = await request.ExecuteAsync();
+
+            PeopleQueryResults results = new PeopleQueryResults();
+            results.Personas = response.Personas.ToList();
+            results.TransactionId = response.TransactionId;
+
+            return results;
+        }
+
+        /// <summary>
         /// Get a user's photo.
         /// </summary>
         /// <param name="emailAddress">The user's email address</param>
@@ -3134,6 +3299,28 @@ namespace Microsoft.Exchange.WebServices.Data
             request.EntityTag = entityTag;
 
             return request.Execute().Results;
+        }
+
+        /// <summary>
+        /// Get a user's photo.
+        /// </summary>
+        /// <param name="emailAddress">The user's email address</param>
+        /// <param name="userPhotoSize">The desired size of the returned photo. Valid photo sizes are in UserPhotoSize</param>
+        /// <param name="entityTag">A photo's cache ID which will allow the caller to ensure their cached photo is up to date</param>
+        /// <returns>A result object containing the photo state</returns>
+        public async System.Threading.Tasks.Task<GetUserPhotoResults> GetUserPhotoAsync(string emailAddress, string userPhotoSize, string entityTag)
+        {
+            EwsUtilities.ValidateParam(emailAddress, "emailAddress");
+            EwsUtilities.ValidateParam(userPhotoSize, "userPhotoSize");
+            EwsUtilities.ValidateParamAllowNull(entityTag, "entityTag");
+
+            GetUserPhotoRequest request = new GetUserPhotoRequest(this);
+
+            request.EmailAddress = emailAddress;
+            request.UserPhotoSize = userPhotoSize;
+            request.EntityTag = entityTag;
+
+            return (await request.ExecuteAsync()).Results;
         }
 
         /// <summary>
